@@ -46,23 +46,66 @@ import yaml
 # so make sure these tfghum are not bound to anything in the game settings
 
 # first make sure offset list is reset (after csgo updates may shift about)
+
+key_to_find = [
+    'dwLocalPlayerController',
+    'm_iObserverMode',
+    'm_hObserverTarget',
+    'dwEntityList',
+    'm_iHealth',
+    'm_iFOVStart',
+    'm_bIsScoped',
+    'm_vecOrigin',
+    'm_vecViewOffset',
+    'dwClientState',
+    'dwViewAngles',
+    'm_hActiveWeapon',
+    'm_iItemDefinitionIndex',
+    'm_iClip1',
+    'dwClientState_GetLocalPlayer'
+]
+def find_keys(data, target_keys):
+    found = {}
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in target_keys:
+                found[key] = value
+            if isinstance(value, dict):
+                found.update(find_keys(value, target_keys))
+            elif isinstance(value, list):
+                for item in value:
+                    found.update(find_keys(item, target_keys))
+    return found
+
+
 if True:
     print('updating offsets')
     offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
+    toml_data = toml.loads(offsets_old)
     # print(';;;;;;;')
     # print(offsets_old)
     # print('-------')
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/offsets.yaml').text
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/client.dll.yaml').text
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/engine2.dll.yaml').text
-    file_contents = yaml.safe_load(offsets)
-    list(file_contents.values())
-    print(file_contents)
-    offsets = toml.dumps(file_contents)
-    # print(offsets)
-    # print('000000000')
+    offsets1 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/offsets.yaml').text
+    offsets2 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/client.dll.yaml').text
+    offsets3 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/engine2.dll.yaml').text
+    yaml_data1 = yaml.safe_load(offsets1)
+    yaml_data2 = yaml.safe_load(offsets2)
+    yaml_data3 = yaml.safe_load(offsets3)
+    file_contents = {**yaml_data1, **yaml_data2, **yaml_data3}
+    foundthings = find_keys(file_contents, key_to_find)
+    for key, value in foundthings.items():
+        if key == "dwLocalPlayerController":
+            toml_data['signatures']['dwLocalPlayer'] = value
+        if key == "dwViewAngles":
+            toml_data['signatures']['dwClientState_ViewAngles'] = value
+        if key in toml_data['signatures']:
+            toml_data['signatures'][key] = value
+        if key in toml_data['netvars']:
+            toml_data['netvars'][key] = value
     del requests
-    update_offsets(offsets_old)
+    update_offsets(toml.dumps(toml_data))
+
+
 
 from dm_hazedumper_offsets import *
 
