@@ -30,35 +30,41 @@ from key_output import ctrl_char, shift_char, space_char
 from key_output import r_char, one_char, two_char, three_char, four_char, five_char
 from key_output import p_char, e_char, c_char_, t_char, cons_char, ret_char
 
-from screen_input import grab_window
+from screen_input_old import grab_window
 from config import *
 from meta_utils import *
 
 # first make sure offset list is reset (after csgo updates may shift about)
 if True:
     print('updating offsets')
-    offsets = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
+    offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
+    print(';;;;;;;')
+    print(offsets_old)
+    print('-------')
+    offsets = requests.get('https://github.com/sezzyaep/CS2-OFFSETS/blob/main/offsets.yaml').text
+    print(offsets)
+    print('000000000')
     del requests
     update_offsets(offsets)
 
 from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_' # stub name of file to save as
-folder_name = 'F:/2021/csgo_bot_train_july2021/'
+folder_name = '/new_train_model/'
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
 starting_value = 1
 
 is_show_img = False
 
 # now find the requried process and where two modules (dll files) are in RAM
-hwin_csgo = win32gui.FindWindow(0, ('counter-Strike: Global Offensive'))
+hwin_csgo = win32gui.FindWindow(0, ('Counter-Strike 2'))
 if(hwin_csgo):
     pid=win32process.GetWindowThreadProcessId(hwin_csgo)
     handle = pymem.Pymem()
     handle.open_process_from_id(pid[1])
     csgo_entry = handle.process_base
 else:
-    print('CSGO wasnt found')
+    print('CS2 wasnt found')
     os.system('pause')
     sys.exit()
 
@@ -74,7 +80,7 @@ while(list_of_modules!=None):
 list_of_modules=handle.list_modules()
 while(list_of_modules!=None):
     tmp=next(list_of_modules)
-    if(tmp.name=="engine.dll"):
+    if(tmp.name=="engine2.dll"):
         print('found engine.dll')
         off_enginedll=tmp.lpBaseOfDll
         break
@@ -92,15 +98,19 @@ n_loops = 0 # how many frames looped
 training_data=[]
 img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=False)
 print('starting loop, press q to quit...')
+queue = multiprocessing.Queue()
+server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
 while True:
     loop_start_time = time.time()
     n_loops += 1
+    
 
+    print(n_loops)
     keys_pressed = key_check()
+    print(keys_pressed)
     if 'Q' in keys_pressed:
         # exit loop
         print('exiting...')
-        server.server_close()
         break
 
     curr_vars={}
@@ -110,21 +120,33 @@ while True:
     curr_vars['obs_mode'] = read_memory(game,(player + m_iObserverMode),'i')
 
     # --- get GSI info
+    print('getting server')
     server.handle_request()
+    # server = MyServer(('localhost', 3000), MyRequestHandler)
 
+    print('got server')
+    # server.handle_request()
+    # print(server)
+    if server.data_all == None: #the server haven't get the data yet
+        continue 
     # need some logic to automate when record the game or not
     # first let's not proceed if the map is loading
     if 'map' not in server.data_all.keys():
         print('not recording, map not in keys')
         time.sleep(5)
         continue
+    else:
+        print('recording')
+        print(curr_vars)
+        print('----')
+        # print(server.data_all)
 
 
     if server.data_all['map']['phase']!='live': # and server.data_all['map']['phase']!='warmup':
         print('not recording, not live')
         # seem to need to restart the gsi connection between each game
         server.server_close()
-        server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
+        server = MyServer(('localhost', 3000), MyRequestHandler)
         server.handle_request()
 
         while server.data_all['map']['phase']!='live' and server.data_all['map']['phase']!='warmup':
@@ -142,7 +164,7 @@ while True:
             ReleaseKey(w_char)
 
             server.server_close()
-            server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
+            server = MyServer(('localhost', 3000), MyRequestHandler)
             server.handle_request()
             if 'map' not in server.data_all.keys(): # hacky way to avoid this triggering failure
                 server.data_all['map']={}
@@ -219,7 +241,7 @@ while True:
     curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
     curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
     curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
-
+    print(curr_vars)
     # get player velocity, x,y,z
     curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
     curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")

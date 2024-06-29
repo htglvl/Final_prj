@@ -38,7 +38,7 @@ from tensorflow import keras
 import tensorflow as tf
 import tensorflow.keras.backend as K
 
-from screen_input import grab_window
+from screen_input_old import grab_window
 from config import *
 
 # this script applies a trained NN in a deathmatch environment
@@ -47,7 +47,7 @@ from config import *
 print('selecting the game window...')
 hwin_orig = win32gui.GetForegroundWindow() # remember original window
 # hwin_csgo = win32gui.FindWindow(None,'Counter-Strike: Global Offensive')
-hwin_csgo = win32gui.FindWindow(None,'Counter-Strike: Global Offensive - Direct3d 9') # as of Feb 2022
+hwin_csgo = win32gui.FindWindow(None,'Counter-Strike 2') # as of Feb 2022
 win32gui.SetForegroundWindow(hwin_csgo)
 time.sleep(1)
 
@@ -69,8 +69,8 @@ model_names = ['ak47_sub_55k_drop_d4_dmexpert_28'] # our best performing dm agen
 # model_names = ['ak47_sub_55k_drop_d4'] # pretrained agent
 # model_names = ['ak47_sub_55k_drop_d4_aimexpertv2_60'] # pretrained and finetuned on expert aim mode
 # model_names = ['July_remoterun7_g9_4k_n32_recipe_ton96__e14'] # pretrained on full dataset
-model_save_dir = os.path.join(os.getcwd(),'model')
-model_save_dir_overflow = 'F:/2021/01_remotemodels_overflow' # could also be in here
+model_save_dir = os.path.join(os.getcwd(),'trained_models')
+model_save_dir_overflow = 'D:\CODE_WORKSPACE\Đồ án\Counter-Strike_Behavioural_Cloning\trained_models' # could also be in here
 
 # folder to save pickle about rewards etc
 pickle_reward_folder = ''
@@ -95,7 +95,7 @@ IS_PROBABILISTIC_ACTIONS = True # TODO, only set for left click atm
 ENT_REG = 0.05 # entropy regularisation
 N_FILES_RESTART = 500 # how many files to save (of 1000 frames) before map restart
 SAVE_TRAIN_DATA=False # whether to actually save the files and do training
-IS_DEMO=False # show agent vision with overlay
+IS_DEMO=True # show agent vision with overlay
 IS_GSI=False # whether to extract kill, death and aux info using GSI (must be set up on your machine)
 
 
@@ -210,7 +210,7 @@ for training_iter in range(n_iters_total):
     Rclicks=0
     count_inaction=0 # count how many frames takes no action
     training_data=[]; hdf5_num=1
-    iteration_deaths=0; iteration_kills=0;
+    iteration_deaths=0; iteration_kills=0
     while n_loops<1000*(mins_per_iter + 0.02): # x minutes
         if IS_GSI:
             if 'map' not in server.data_all.keys() or 'player' not in server.data_all.keys():

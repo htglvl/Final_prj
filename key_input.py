@@ -33,7 +33,7 @@ def mouse_check():
     return pt.x, pt.y
 
 def mouse_l_click_check(previous_status):
-    held_down=0; clicked=0;
+    held_down=0; clicked=0
     current_status = wapi.GetKeyState(0x01)
 
     if current_status < 0:
@@ -44,7 +44,7 @@ def mouse_l_click_check(previous_status):
     return current_status, clicked, held_down
 
 def mouse_r_click_check(previous_status):
-    held_down=0; clicked=0;
+    held_down=0; clicked=0
     current_status = wapi.GetKeyState(0x02)
 
     if current_status < 0:
@@ -66,6 +66,8 @@ def mouse_log_test():
         current_status_r, clicked_r, held_down_r = mouse_r_click_check(previous_status_r)
         print('l_click', clicked_l, ' l_held', held_down_l,
             ' | r_click', clicked_r, ' r_held', held_down_r)
+        x,y = mouse_check()
+        print(x,y)
         previous_status_l = current_status_l
         previous_status_r = current_status_r
         # time.sleep(0.1)

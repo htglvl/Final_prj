@@ -10,6 +10,10 @@ from ctypes  import *
 from pymem   import *
 import numpy as np
 import requests
+import http.server
+import socketserver
+import urllib.request
+import multiprocessing
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
@@ -46,7 +50,7 @@ def read_memory(game, address, type):
     buffer = (ctypes.c_byte * getlength(type))()
     bytesRead = ctypes.c_ulonglong(0)
     readlength = getlength(type)
-    ReadProcessMemory(game, address, buffer, readlength, byref(bytesRead))
+    ReadProcessMemory(game, ctypes.c_long(address), buffer, readlength, byref(bytesRead))
     return struct.unpack(type, buffer)[0]
 
 # stuff for game state integration...
@@ -54,8 +58,7 @@ def read_memory(game, address, type):
 # https://docs.python.org/2/library/basehttpserver.html
 # info about HTTPServer, BaseHTTPRequestHandler
 class MyServer(HTTPServer):
-    def __init__(self, server_address, token, RequestHandler):
-        self.auth_token = token
+    def __init__(self, server_address, RequestHandler):
         super(MyServer, self).__init__(server_address, RequestHandler)
         # create all the states of interest here
         self.data_all = None
@@ -83,8 +86,8 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 
     def parse_payload(self, payload):
         # Ignore unauthenticated payloads
-        if not self.is_payload_authentic(payload):
-            return None
+        # if not self.is_payload_authentic(payload):
+        #     return None
 
         self.server.data_all = payload.copy()
 
@@ -112,6 +115,7 @@ class MyRequestHandler(BaseHTTPRequestHandler):
 
     def get_player_status(self, payload):
         if 'player_state' in payload:
+            print("get player state")
             return payload['player_state']
         else:
             return None
@@ -122,5 +126,86 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         """
         return
 
-server = MyServer(('localhost', 3000), 'MYTOKENHERE', MyRequestHandler)
+
+
+#hoang add more
+class PostHandler(http.server.SimpleHTTPRequestHandler):
+
+    def __init__(self, *args):
+        http.server.SimpleHTTPRequestHandler.__init__(self, *args)
+
+    def do_POST(self):
+        if self.path == "/shutdown":
+            self.server.should_be_running = False
+        else:
+            length = int(self.headers["Content-Length"])
+            post_body = self.rfile.read(length).decode("utf-8")
+            self.process_post_data(post_body)
+        self.send_ok_response()
+
+    def process_post_data(self, json_string):
+        json_data = json.loads(json_string)
+        self.server.data_all = json_data
+        #need more stuff here
+
+    def send_ok_response(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+
+
+class ListenerServer(socketserver.TCPServer):
+
+    def __init__(self, server_address, req_handler_class, msg_queue):
+        self.msg_queue = msg_queue
+        self.should_be_running = True
+        self.data_all = None
+        socketserver.TCPServer.__init__(
+            self, server_address, req_handler_class)
+
+    def serve_forever(self):
+        while self.should_be_running:
+            self.handle_request()
+            # print(self.data_all)
+
+
+class ListenerWrapper(multiprocessing.Process):
+
+    def __init__(self, msg_queue):
+        multiprocessing.Process.__init__(self)
+        self.msg_queue = msg_queue
+        self.server = None
+
+    def run(self):
+        self.server = ListenerServer(
+            ("127.0.0.1", 3000), PostHandler, self.msg_queue)
+        self.server.serve_forever()
+
+    def shutdown(self):
+        req = urllib.request.Request("http://127.0.0.1:3000/shutdown", data=b"")
+        urllib.request.urlopen(req)
+#end add
+
+
+
+# server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
+# server.serve_forever()
+# if server != None:
+#     print(server.data_all)
+# def main():
+#     # Message queue used for comms between processes
+#     queue = multiprocessing.Queue()
+#     listener = ListenerWrapper(queue)
+#     if listener.server != None:
+#         print(listener.server.data_all)
+#     listener.start()
+
+#     listener.shutdown()
+#     listener.join()
+
+# if __name__ == "__main__":
+#     main()
+
+
+# server = MyServer(('localhost', 3000), MyRequestHandler)
 

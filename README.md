@@ -1,6 +1,6 @@
 # Counter-Strike Deathmatch with Large-Scale Behavioural Cloning
 [Tim Pearce](https://twitter.com/Tea_Pearce), [Jun Zhu](https://ml.cs.tsinghua.edu.cn/~jun/index.shtml)  
-Presented at IEEE Conference on Games (CoG) 2022, and Offline RL workshop, NeurIPS 2021  
+IEEE Conference on Games (CoG) 2022 [⭐️ Best Paper Award!]. Also presented at Offline RL workshop, NeurIPS 2021  
 Paper: https://arxiv.org/abs/2104.04258  
 Four minute introduction video: https://youtu.be/rnz3lmfSHv0  
 Gameplay examples: https://youtu.be/KTY7UhjIMm4  
@@ -46,7 +46,7 @@ Brief overview of each script's purpose.
     : Gets screenshot of the CSGO window, does some cropping and downsampling. Uses win32gui, win32ui, win32con, OpenCV.
 - ```key_output.py```
     : Contains functions to send mouse clicks, set mouse position and key presses. Uses ctypes.
-- ```key_output.py```
+- ```key_input.py```
     : Contains functions to check for mouse location, mouse clicks and key presses. Uses win32api and ctypes.
 - ```meta_utils.py```
     : Contains functions to set up RAM reading. Also contains a server class to connect to CSGO's GSI tool -- you should update ```MYTOKENHERE``` variable if setting up GSI.
