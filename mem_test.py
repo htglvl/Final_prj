@@ -38,23 +38,149 @@ from config import *
 from meta_utils import *
 import toml
 import yaml
+    
+key_to_find = [
+    'dwLocalPlayerController',
+    'm_iObserverMode',
+    'm_hObserverTarget',
+    'dwEntityList',
+    'm_iHealth',
+    'm_iFOVStart',
+    'm_bIsScoped',
+    'm_vecOrigin',
+    'm_vecViewOffset',
+    'dwNetworkGameClient',
+    'dwViewAngles',
+    'm_hActiveWeapon',
+    'm_iItemDefinitionIndex',
+    'm_iClip1',
+    'dwNetworkGameClient_getLocalPlayer',
+    'dwNetworkGameClient_signOnState'
+]
+# Special key in toml_data
+special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_State', 'dwLocalPlayer', 'dwClientState_ViewAngles']
+key_to_keep = set(key_to_find) | set(special_key)
 
-if True:
+# Delete all other key that are not in read_memory
+
+if False:
     print('updating offsets')
     offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
+    toml_data = toml.loads(offsets_old)
     # print(';;;;;;;')
     # print(offsets_old)
     # print('-------')
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/offsets.yaml').text
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/client.dll.yaml').text
-    offsets = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/engine2.dll.yaml').text
-    file_contents = yaml.safe_load(offsets)
-    list(file_contents.values())
-    print(file_contents)
-    offsets = toml.dumps(file_contents)
-    # print(offsets)
-    # print('000000000')
+    offsets1 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/offsets.yaml').text
+    offsets2 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/client.dll.yaml').text
+    offsets3 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/engine2.dll.yaml').text
+    yaml_data1 = yaml.safe_load(offsets1)
+    yaml_data2 = yaml.safe_load(offsets2)
+    yaml_data3 = yaml.safe_load(offsets3)
+    file_contents = {**yaml_data1, **yaml_data2, **yaml_data3}
+    foundthings = find_keys(file_contents, key_to_find)
+    for key, value in foundthings.items():
+        if key == "dwLocalPlayerController":
+            toml_data['signatures']['dwLocalPlayer'] = value
+        if key == "dwViewAngles":
+            toml_data['signatures']['dwClientState_ViewAngles'] = value
+        if key in toml_data['signatures']:
+            toml_data['signatures'][key] = value
+        if key in toml_data['netvars']:
+            toml_data['netvars'][key] = value
+        if key == "dwNetworkGameClient":
+            toml_data['signatures']['dwClientState'] = value
+        if key == 'dwNetworkGameClient_signOnState':
+            toml_data['signatures']['dwClientState_State'] = value
+        if key == 'dwNetworkGameClient_getLocalPlayer':
+            toml_data['signatures']['dwClientState_GetLocalPlayer'] = value
+    toml_data = {
+        'timestamp': toml_data['timestamp'],
+        'signatures': filter_keys(toml_data['signatures'], key_to_keep),
+        'netvars': filter_keys(toml_data['netvars'], key_to_keep)
+    }
     del requests
-    update_offsets(offsets_old)
+    update_offsets(toml.dumps(toml_data))
 
-    
+# from dm_hazedumper_offsets import *
+
+#find the process aka the
+hwin_csgo = win32gui.FindWindow(None, ('Counter-Strike 2'))
+if(hwin_csgo):
+    pid=win32process.GetWindowThreadProcessId(hwin_csgo)
+    handle = pymem.Pymem()
+    handle.open_process_from_id(pid[1])
+    csgo_entry = handle.process_base
+else:
+    print('CS2 wasnt found')
+    os.system('pause')
+    sys.exit()
+
+# now find two dll files needed
+list_of_modules=handle.list_modules()
+while(list_of_modules!=None):
+    tmp=next(list_of_modules)
+    # used to be client_panorama.dll, moved to client.dll during 2020
+    if(tmp.name=="client.dll"):
+        print('found client.dll')
+        off_clientdll=tmp.lpBaseOfDll
+        break
+list_of_modules=handle.list_modules()
+while(list_of_modules!=None):
+    tmp=next(list_of_modules)
+    if(tmp.name=="engine2.dll"):
+        print('found engine2.dll')
+        off_enginedll=tmp.lpBaseOfDll
+        break
+
+# not sure what this bit does? sets up reading/writing I guess
+OpenProcess = windll.kernel32.OpenProcess
+CloseHandle = windll.kernel32.CloseHandle
+PROCESS_ALL_ACCESS = 0x1F0FFF
+game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
+
+# jump = 0x4
+# offset = 0
+# dwEntityList = 0x19BDE58
+# m_hObserverTarget = 0x44
+# m_iObserverMode = 64
+# m_vecOrigin = 0x88
+# dwLocalPlayerController = 0x1A0DA88
+# dwLocalPlayerPawn = 25311752
+# m_pObserverServices = 4368
+
+# m_vecViewOffset = 0xC50
+# dwViewRender = 0x1A20548
+# m_vecVelocity = 0x3E0
+# m_bInCrouch = 480
+# m_bDucking = 493
+# addlocalpos1 = [
+# 0x1917DF0,
+# 0x1917DFC,
+# 0x1917E08,
+# 0x1917E14,
+# 0x19A8340]
+
+# for add in addlocalpos1:
+#     x = add - 0x88 - 0x1A20548
+#     print(x)
+
+
+ReadProcessMemory = windll.kernel32.ReadProcessMemory
+# localpos1 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin), "f")
+# localpos2 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin + 0x4), "f")
+# localpos3 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin + 0x8), "f")
+# while True:
+#     # 0x1A0DA88 local player controller
+#     player = read_memory(game,(off_clientdll + 0x4), "i")
+#     print(player)
+
+# for i in range(10000):'
+# 18504 4
+# found
+# 32520 4
+
+dwViewAngles = 27447880
+while True:
+    viewangle_vert = read_memory(game,(off_clientdll + dwViewAngles), "f")
+    print(viewangle_vert)
+    # offset += jump

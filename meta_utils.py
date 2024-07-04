@@ -22,6 +22,35 @@ import json
 ReadProcessMemory = windll.kernel32.ReadProcessMemory
 WriteProcessMemory = windll.kernel32.WriteProcessMemory
 
+# This return a dict so that other def can work
+def read_json_file(json_file_path):
+    with open(json_file_path, 'r') as json_file:
+        json_data = json.load(json_file)
+    return json_data
+
+# Delete all other key that are not in read_memory
+def filter_keys(data, keys_to_keep):
+    return {k: v for k, v in data.items() if k in keys_to_keep}
+
+def find_keys(data, target_keys):
+    found = {}
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key in target_keys and key not in found:
+                found[key] = value
+            if isinstance(value, dict):
+                nested_found = find_keys(value, target_keys)
+                for nested_key, nested_value in nested_found.items():
+                    if nested_key not in found:
+                        found[nested_key] = nested_value
+            elif isinstance(value, list):
+                for item in value:
+                    nested_found = find_keys(item, target_keys)
+                    for nested_key, nested_value in nested_found.items():
+                        if nested_key not in found:
+                            found[nested_key] = nested_value
+    return found
+
 # stuff for RAM...
 def update_offsets(raw):
     raw = raw.replace('[signatures]','#signatures\n')
@@ -50,9 +79,8 @@ def read_memory(game, address, type):
     buffer = (ctypes.c_byte * getlength(type))()
     bytesRead = ctypes.c_ulonglong(0)
     readlength = getlength(type)
-    ReadProcessMemory(game, ctypes.c_long(address), buffer, readlength, byref(bytesRead))
+    ReadProcessMemory(game, ctypes.c_void_p(address), buffer, readlength, byref(bytesRead))
     return struct.unpack(type, buffer)[0]
-
 # stuff for game state integration...
 
 # https://docs.python.org/2/library/basehttpserver.html

@@ -100,6 +100,8 @@ img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=Fal
 print('starting loop, press q to quit...')
 queue = multiprocessing.Queue()
 server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
+
+onetime = True
 while True:
     loop_start_time = time.time()
     n_loops += 1
@@ -232,9 +234,9 @@ while True:
         obs_id=None
         
     # get player info
-    curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
-    curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
-    curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
+    # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
+    # curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
+    # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
 
     # get player position, x,y,z and height
     curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")

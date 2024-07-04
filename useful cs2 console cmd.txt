@@ -1,0 +1,12 @@
+mp_roundtime_defuse 60;mp_roundtime_hostage 60;mp_roundtime 60;mp_restartgame 1
+# to give round time extra time
+bot_kick
+# self explanatory
+cl_showpos 1
+# show ingame pos, vel and angle
+sv_cheats true
+# to activate some in game value like showpos
+
+spectatemode 3 third person
+spectatemode 4 freeview
+spectatemode 2,5 maybe first?
