@@ -38,7 +38,7 @@ from config import *
 from meta_utils import *
 import toml
 import yaml
-    
+from dm_hazedumper_offsets import *
 key_to_find = [
     'dwLocalPlayerController',
     'm_iObserverMode',
@@ -138,49 +138,33 @@ CloseHandle = windll.kernel32.CloseHandle
 PROCESS_ALL_ACCESS = 0x1F0FFF
 game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
 
-# jump = 0x4
-# offset = 0
-# dwEntityList = 0x19BDE58
-# m_hObserverTarget = 0x44
-# m_iObserverMode = 64
-# m_vecOrigin = 0x88
-# dwLocalPlayerController = 0x1A0DA88
-# dwLocalPlayerPawn = 25311752
-# m_pObserverServices = 4368
-
-# m_vecViewOffset = 0xC50
-# dwViewRender = 0x1A20548
-# m_vecVelocity = 0x3E0
-# m_bInCrouch = 480
-# m_bDucking = 493
-# addlocalpos1 = [
-# 0x1917DF0,
-# 0x1917DFC,
-# 0x1917E08,
-# 0x1917E14,
-# 0x19A8340]
-
-# for add in addlocalpos1:
-#     x = add - 0x88 - 0x1A20548
-#     print(x)
-
 
 ReadProcessMemory = windll.kernel32.ReadProcessMemory
-# localpos1 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin), "f")
-# localpos2 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin + 0x4), "f")
-# localpos3 = read_memory(game,(off_clientdll + dwViewRender - 0x200 + m_vecOrigin + 0x8), "f")
+
+m_fFlags = 972
+dwLocalPlayerPawn = 0x1824A18
+dwLocalPlayerController = 0x1A0E9C8
+m_iHealth = 0x324
+m_pObserverServices = 0x1110
+m_iObserverMode = 0x40
+m_hObserverTarget = 0x44
+m_pObserverServices = 0x1110
+m_fFlags = 0x3CC
+dwEntityList = 0x19BEED0
+m_szLastPlaceName = 0x14A4
+m_vecVelocity = 992
+m_iHealth = 0x324
+
+
+offset = 0
+jump = 0x4
 # while True:
-#     # 0x1A0DA88 local player controller
-#     player = read_memory(game,(off_clientdll + 0x4), "i")
-#     print(player)
+#     localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+#     obs_mode = read_memory(game,(localPlayer + m_iObserverMode),'i')
 
-# for i in range(10000):'
-# 18504 4
-# found
-# 32520 4
+#     flag = read_memory(game,(localPlayer + m_fFlags), "b")
+#     print(obs_mode)
 
-dwViewAngles = 27447880
 while True:
-    viewangle_vert = read_memory(game,(off_clientdll + dwViewAngles), "f")
-    print(viewangle_vert)
-    # offset += jump
+    localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+

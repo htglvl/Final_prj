@@ -28,19 +28,22 @@ from key_output import left_click, hold_left_click, release_left_click
 from key_output import w_char, s_char, a_char, d_char, n_char, q_char
 from key_output import ctrl_char, shift_char, space_char
 from key_output import r_char, one_char, two_char, three_char, four_char, five_char
-from key_output import p_char, e_char, c_char_, t_char, cons_char, ret_char
+from key_output import p_char, e_char, c_char_, t_char, cons_char, ret_char, x_char
+import re
+
 
 # from screen_input import grab_window
 from screen_input import capture_win_alt
 from config import *
 from meta_utils import *
 
+
 # first make sure offset list is reset (after csgo updates may shift about)
 
 from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_' # stub name of file to save as
-folder_name = '/new_train_model/'
+folder_name = "D:\CODE_WORKSPACE\Đồ án\Counter-Strike_Behavioural_Cloning\cs2_bot_train\Rel_new_train_model"
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
 starting_value = 1
 
@@ -90,8 +93,6 @@ n_loops = 0 # how many frames looped
 training_data=[]
 #img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=False)
 print('starting loop, press q to quit...')
-queue = multiprocessing.Queue()
-server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
 curr_vars = {}
 onetime = True
 x_player_based = 0
@@ -109,223 +110,131 @@ while True:
         break
 
     
-    # --- get GSI info
-    server.handle_request()
-    json_data = server.data_all
-    # server = MyServer(('localhost', 3000), MyRequestHandler)
-    player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
-    curr_vars['obs_mode'] = read_memory(game,(player + m_iObserverMode),'i')
-    # server.handle_request()
-    # print(server)
-    if server.data_all == None: #the server haven't get the data yet
-        continue 
-        
     # capture frame and it's data
     img_small = capture_win_alt("Counter-Strike 2", hwin_csgo)
+
+    localPlayer = read_memory(game,(off_clientdll + dwLocalPlayer), "q")
+    placeName = read_memory(game,(localPlayer + m_szLastPlaceName),'char18')
+
+    curr_vars['vel_1'] = read_memory(game,(localPlayer + m_vecVelocity), "f")
+    curr_vars['vel_2'] = read_memory(game,(localPlayer + m_vecVelocity + 0x4), "f")
+    curr_vars['vel_3'] = read_memory(game,(localPlayer + m_vecVelocity + 0x8), "f")
+
+    curr_vars['viewangle_vert'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles), "f")
+    curr_vars['viewangle_xy'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles + 0x4), "f")
+    curr_vars['vel_1'] = curr_vars['vel_1']*np.cos(np.deg2rad(-curr_vars['viewangle_xy'])) -curr_vars['vel_2'] * np.sin(-np.deg2rad(curr_vars['viewangle_xy']))
+    curr_vars['vel_2'] = curr_vars['vel_1']*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +curr_vars['vel_2'] * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
+    curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2)
+
+
+    print(curr_vars['viewangle_vert'])
+
+    # zvert_rads is 0 when staring at ground, pi when starting at ceiling
+    curr_vars['zvert_rads'] = (-curr_vars['viewangle_vert'] + 90)/360 * (2*np.pi)
     
-    print('image in loop:', n_loops)
+    # xy_rad is 0 and 2pi when pointing true 'north', increasing from 0 to 2pi as turn clockwise, so pi when point south
+    if curr_vars['viewangle_xy']<0:
+        xy_deg = -curr_vars['viewangle_xy']
+    elif curr_vars['viewangle_xy']>=0:
+        xy_deg = 360-curr_vars['viewangle_xy']
+    curr_vars['xy_rad'] = xy_deg/360*(2*np.pi)
 
-    cur_x, cur_y, cur_z = json_data['player']['position'].split(',')
-    cur_timestamp = time.time()
+    # print('mouse xy_rad',np.round(curr_vars['xy_rad'],2), end='\r')
+    # print('obs_hp',curr_vars['obs_health'],'gsi_hp',curr_vars['gsi_health'], curr_vars['gsi_team'], curr_vars['gsi_kills'],'mouse xy_rad',np.round(curr_vars['xy_rad'],2), end='\r')
 
-    cur_x = float(cur_x)
-    cur_y = float(cur_y.lstrip())
-    cur_z = float(cur_z.rstrip())
+    # get velocity relative to direction facing, 0 or 2pi if running directly forwards, pi if directly backwards, pi/2 for right
+    vel_x = curr_vars['vel_1']
+    vel_y = -curr_vars['vel_2']
 
-    vel_theta_abs = 0
-    magnitude = 0
-    casee = 0
-    viewangle_xy = 0
-    if onetime:
-        onetime = False
-        old_timestamp = cur_timestamp
-    try:
-
-        old_x, old_y, old_z = json_data['previously']['player']['position'].split(',')
-        old_x = float(old_x)
-        old_y = float(old_y.lstrip())
-        old_z = float(old_z.rstrip())
-
-        vel_x = (cur_x - old_x)/(cur_timestamp-old_timestamp)
-        vel_y = (cur_y - old_y)/(cur_timestamp-old_timestamp)
-        vel_z = (cur_z - old_z)/(cur_timestamp-old_timestamp)
-        viewangle_vert = read_memory(game,(off_clientdll + dwClientState_ViewAngles), "f")
-        viewangle_xy = read_memory(game,(off_clientdll + dwClientState_ViewAngles + 0x4), "f")
-        x_player_based = vel_x*np.cos(-np.deg2rad(viewangle_xy)) -vel_y * np.sin(-np.deg2rad(viewangle_xy))
-        y_player_based = vel_x*np.sin(-np.deg2rad(viewangle_xy)) +vel_y * np.cos(-np.deg2rad(viewangle_xy))
-        print('-----------------------')
-        print('angle', viewangle_xy)
-        print(x_player_based, y_player_based)
-        print('------------------------------')
-        magnitude = np.sqrt(vel_x**2 + vel_y**2)
-        old_timestamp = cur_timestamp
-        # get velocity relative to direction facing, 0 or 2pi if running directly forwards, pi if directly backwards, pi/2 for right, 3pi/2 for  maybe
-        vel_x = x_player_based
-        vel_y = -y_player_based
+    if vel_y>0 and vel_x>0:
+        vel_theta_abs = np.arctan(vel_y/vel_x)
+    elif vel_y>0 and vel_x<0:
+        vel_theta_abs = np.pi/2 + np.arctan(-vel_x/vel_y)
+    elif vel_y<0 and vel_x<0:
+        vel_theta_abs = np.pi + np.arctan(-vel_y/-vel_x)
+    elif vel_y<0 and vel_x>0:
+        vel_theta_abs = 2*np.pi - np.arctan(-vel_y/vel_x)
+    elif vel_y==0 and vel_x==0:
+        vel_theta_abs=0
+    elif vel_y==0 and vel_x>0:
+        vel_theta_abs=0
+    elif vel_y==0 and vel_x<0:
+        vel_theta_abs=np.pi
+    elif vel_x==0 and vel_y>0:
+        vel_theta_abs=np.pi/2
+    elif vel_x==0 and vel_y<0:
+        vel_theta_abs=2*np.pi*3/4
+    else:
         vel_theta_abs = 0
-        casee = 0
-        if vel_y>0 and vel_x>0:
-            vel_theta_abs = np.arctan(vel_y/vel_x)
-        elif vel_y>0 and vel_x<0:
-            print('case 1')
-            casee = 1
-            vel_theta_abs = np.pi/2 + np.arctan(-vel_x/vel_y)
-        elif vel_y<0 and vel_x<0:
-            print('case 2')
-            casee = 2
-            vel_theta_abs = np.pi + np.arctan(-vel_y/-vel_x)
-        elif vel_y<0 and vel_x>0:
-            print('case 3')
-            casee = 3
-            vel_theta_abs = 2*np.pi - np.arctan(-vel_y/vel_x)
-        elif vel_y==0 and vel_x==0:
-            print('case 4')
-            casee = 4
-            vel_theta_abs=0
-        elif vel_y==0 and vel_x>0:
-            print('case 5')
-            casee = 5
-            vel_theta_abs=0
-        elif vel_y==0 and vel_x<0:
-            print('case 6')
-            casee = 6
-            vel_theta_abs=np.pi
-        elif vel_x==0 and vel_y>0:
-            print('case 7')
-            casee = 8
-            vel_theta_abs=np.pi/2
-        elif vel_x==0 and vel_y<0:
-            print('case 8')
-            casee = 8
-            vel_theta_abs=2*np.pi*3/4
-        else:
-            print('something wrong')
-            casee = 0
-            vel_theta_abs = 0
-        print(180*vel_theta_abs/np.pi, f)
-    except:
-        print("no json_data['previously']")
+    curr_vars['vel_theta_abs'] = vel_theta_abs
+    print(180 * vel_theta_abs/np.pi)
 
-    # need some logic to automate when record the game or not
-    # first let's not proceed if the map is loading
-    if 'map' not in server.data_all.keys():
-        print('not recording, map not in keys')
-        time.sleep(5)
-        continue
+
+
+    curr_vars['tp_wasd'] = []
+    if 'T' in keys_pressed:
+        # HoldKey(w_char)
+        curr_vars['tp_wasd'].append('w')
+    if 'F' in keys_pressed:
+        # HoldKey(a_char)
+        curr_vars['tp_wasd'].append('a')
+    if 'G' in keys_pressed:
+        # HoldKey(s_char)
+        curr_vars['tp_wasd'].append('s')
+    if 'H' in keys_pressed:
+        # HoldKey(d_char)
+        curr_vars['tp_wasd'].append('d')
+    if 'C' in keys_pressed:
+        # HoldKey(c_char_)
+        curr_vars['tp_wasd'].append('crouch')
+    if 'X' in keys_pressed:
+        # HoldKey(x_char)
+        curr_vars['tp_wasd'].append('shift')
+    if 'M' in keys_pressed:
+        # HoldKey(space_char)
+        curr_vars['tp_wasd'].append('space')
+
+    # if 'T' not in keys_pressed:
+    #     ReleaseKey(w_char)
+    # if 'F' not in keys_pressed:
+    #     ReleaseKey(a_char)
+    # if 'G' not in keys_pressed:
+    #     ReleaseKey(s_char)
+    # if 'H' not in keys_pressed:
+    #     ReleaseKey(d_char)
+    # if 'C' not in keys_pressed:
+    #     ReleaseKey(c_char_)
+    # if 'X' not in keys_pressed:
+    #     ReleaseKey(x_char)
+    # if 'M' not in keys_pressed:
+    #     ReleaseKey(space_char)
+    print('image in loop:', n_loops)
     
-
-    if server.data_all['map']['phase']!='live': # and server.data_all['map']['phase']!='warmup':
-        print('not recording, not live')
-        # seem to need to restart the gsi connection between each game
-        server.server_close()
-        server = MyServer(('localhost', 3000), MyRequestHandler)
-        server.handle_request()
-
-        while server.data_all['map']['phase']!='live' and server.data_all['map']['phase']!='warmup':
-            print('not recording, waiting to go live')
-            time.sleep(15)
-
-            # try to join terrorist team
-            HoldKey(one_char)
-            time.sleep(0.5)
-            ReleaseKey(one_char)
-
-            # try to take a step
-            HoldKey(w_char)
-            time.sleep(0.5)
-            ReleaseKey(w_char)
-
-            server.server_close()
-            server = MyServer(('localhost', 3000), MyRequestHandler)
-            server.handle_request()
-            if 'map' not in server.data_all.keys(): # hacky way to avoid this triggering failure
-                server.data_all['map']={}
-                server.data_all['map']['phase']='dummy'
-            print(server.data_all['map'])
-        print('game went live,', time.time())
-        # time_start_game = time.time()
-        print('using console to spectate')
-        time.sleep(3)
-        for c in [cons_char,s_char,p_char,e_char,c_char_,t_char,a_char,t_char,e_char,ret_char,cons_char,two_char]:
-            # type spectate
-            time.sleep(0.25)
-            HoldKey(c)
-            ReleaseKey(c)
-
-
-    
-
-    image_filename = os.path.join('velocity_check', f"{n_loops}.png")
-    data_filename = os.path.join('velocity_check', f"{n_loops}.json")
-
-    # Save the image
-    cv2.imwrite(image_filename, img_small)
-
-    # Save the data1
-    with open(data_filename, 'w') as f:
-        json.dump(json_data['player']['position'], f)
-        json.dump(json_data['player']['forward'], f)
-        json.dump('case ,',f)
-        json.dump(casee,f)
-        json.dump('angle ,',f)
-        json.dump(180*vel_theta_abs/np.pi, f)
-        json.dump('vel player_based',f)
-        json.dump(x_player_based,f)
-        json.dump(',',f)
-        json.dump(y_player_based,f)
-        json.dump('angle ,',f)
-        json.dump(viewangle_xy, f)
-
-
-    print(f"Saved {image_filename} and {data_filename}")
-
-  
-    # don't proceed if not observing from first person, or something wrong with GSI
-    if 'team' not in server.data_all['player'].keys() or curr_vars['obs_mode'] in [5,6]:
-        print('not recording')
-        time.sleep(5)
-        continue
-
-
-    curr_vars['gsi_health'] = server.data_all['player']['state']['health']
-
-    timeleft=9999
-    if 'phase_countdowns' in server.data_all.keys():
-        if 'phase_ends_in' in server.data_all['phase_countdowns'].keys():
-            timeleft = float(server.data_all['phase_countdowns']['phase_ends_in'])
+    print(curr_vars['tp_wasd'])
         # trying to avoid that early minute of play to figure out who's good
     # print(timeleft)
     # if SAVE_TRAIN_DATA and not IS_PAUSE and timeleft < 540:
-    if SAVE_TRAIN_DATA and not IS_PAUSE: ## not if capturing bot behaviour!
+    if SAVE_TRAIN_DATA and not IS_PAUSE:
         info_save = curr_vars
         training_data.append([img_small,curr_vars])
-        # training_data.append([[],curr_vars]) # if don't want to save image, eg tracking around map
         if len(training_data) % 100 == 0:
             print('training data collected:', len(training_data))
 
         if len(training_data) >= 1000:
             # save about every minute
-            file_name = folder_name+save_name+'{}.npy'.format(starting_value)
-            np.save(file_name,training_data)
+            file_name = folder_name+save_name+'{}.pkl'.format(starting_value)
+            with open(file_name, 'wb') as file:
+                pickle.dump(training_data, file)
+
             print('SAVED', starting_value)
             training_data = []
             starting_value += 1
 
-    if n_loops%200==0 or curr_vars['gsi_health'] == 0:
-
-        HoldKey(one_char) # chooses top scoring player in server
-        time.sleep(0.03)
-        ReleaseKey(one_char)
-
-
-    # grab image
-    if SAVE_TRAIN_DATA:
-        # img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=is_show_img)
-        img_small = capture_win_alt("Counter-Strike 2", hwin_csgo)
+    # grab imag
         
         # we put the image grab last as want the time lag to match when
         # will be running fwd pass through NN
 
-    wait_for_loop_end(loop_start_time, loop_fps, n_loops, is_clear_decals=True)
+    wait_for_loop_end(loop_start_time, loop_fps, n_loops, is_clear_decals=False)
     clear()
 

@@ -73,14 +73,25 @@ def getlength(type):
     elif type == 'b': #tp added
         return 1 # maybe 4
     elif type == 'h': #tp added
-        return 4 
+        return 2 
+    elif type == 'q':
+        return 8
+    elif type == 'char18':
+        return 18
+
 
 def read_memory(game, address, type):
     buffer = (ctypes.c_byte * getlength(type))()
     bytesRead = ctypes.c_ulonglong(0)
     readlength = getlength(type)
     ReadProcessMemory(game, ctypes.c_void_p(address), buffer, readlength, byref(bytesRead))
-    return struct.unpack(type, buffer)[0]
+
+    if type == 'char18':
+        # Convert buffer to bytes and decode as string
+        return bytes(buffer).decode('utf-8')
+    else:
+        return struct.unpack(type, buffer)[0]
+    
 # stuff for game state integration...
 
 # https://docs.python.org/2/library/basehttpserver.html

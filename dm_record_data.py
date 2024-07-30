@@ -14,10 +14,11 @@ import win32process
 import ctypes
 from ctypes  import *
 from pymem   import *
-
+import pickle
 import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
+import http.server
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,34 +31,88 @@ from key_output import ctrl_char, shift_char, space_char
 from key_output import r_char, one_char, two_char, three_char, four_char, five_char
 from key_output import p_char, e_char, c_char_, t_char, cons_char, ret_char
 
-from screen_input_old import grab_window
+from screen_input import capture_win_alt
+
 from config import *
 from meta_utils import *
+import toml
+import yaml
+
+
+
+key_to_find = [
+    'dwLocalPlayerController',
+    'm_iObserverMode',
+    'm_hObserverTarget',
+    'dwEntityList',
+    'm_iHealth',
+    'm_iFOVStart',
+    'm_bIsScoped',
+    'm_vecOrigin',
+    'm_vecViewOffset',
+    'dwNetworkGameClient',
+    'dwViewAngles',
+    'm_hActiveWeapon',
+    'm_iItemDefinitionIndex',
+    'm_iClip1',
+    'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
+    'dwNetworkGameClient_signOnState',
+    'm_vecVelocity'
+]
+
+# Special key in toml_data
+special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_State', 'dwLocalPlayer', 'dwClientState_ViewAngles']
+key_to_keep = set(key_to_find) | set(special_key)
+
 
 # first make sure offset list is reset (after csgo updates may shift about)
 if True:
-    print('updating offsets')
     offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
-    print(';;;;;;;')
-    print(offsets_old)
-    print('-------')
-    offsets = requests.get('https://github.com/sezzyaep/CS2-OFFSETS/blob/main/offsets.yaml').text
-    print(offsets)
-    print('000000000')
+    toml_data = toml.loads(offsets_old)
+
+    client_dll_data = read_json_file("output\\engine2.dll.json")
+    engine2_data = read_json_file("output\\client.dll.json")
+    offset_data = read_json_file("output\\offsets.json")
+    x = find_keys(client_dll_data, key_to_find)
+    y = find_keys(engine2_data, key_to_find)
+    z = find_keys(offset_data, key_to_find)
+    foundthings = {**x, **y, **z}
+
+    for key, value in foundthings.items():
+        if key == "dwLocalPlayerController":
+            toml_data['signatures']['dwLocalPlayer'] = value
+        if key == "dwViewAngles":
+            toml_data['signatures']['dwClientState_ViewAngles'] = value
+        if key in toml_data['signatures']:
+            toml_data['signatures'][key] = value
+        if key in toml_data['netvars']:
+            toml_data['netvars'][key] = value
+        if key == "dwNetworkGameClient":
+            toml_data['signatures']['dwClientState'] = value
+        if key == 'dwNetworkGameClient_signOnState':
+            toml_data['signatures']['dwClientState_State'] = value
+        if key == 'dwNetworkGameClient_localPlayer':
+            toml_data['signatures']['dwClientState_GetLocalPlayer'] = value
+    toml_data = {
+        'timestamp': toml_data['timestamp'],
+        'signatures': filter_keys(toml_data['signatures'], key_to_keep),
+        'netvars': filter_keys(toml_data['netvars'], key_to_keep)
+    }
     del requests
-    update_offsets(offsets)
+    update_offsets(toml.dumps(toml_data))
 
 from dm_hazedumper_offsets import *
 
-save_name = 'dm_test_' # stub name of file to save as
-folder_name = '/new_train_model/'
+save_name = 'dm_test_auto_' # stub name of file to save as
+
+folder_name = "D:\CODE_WORKSPACE\Đồ án\Counter-Strike_Behavioural_Cloning\cs2_bot_train"
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
 starting_value = 1
 
-is_show_img = False
+is_show_img = True
 
 # now find the requried process and where two modules (dll files) are in RAM
-hwin_csgo = win32gui.FindWindow(0, ('Counter-Strike 2'))
+hwin_csgo = win32gui.FindWindow(None, ('Counter-Strike 2'))
 if(hwin_csgo):
     pid=win32process.GetWindowThreadProcessId(hwin_csgo)
     handle = pymem.Pymem()
@@ -81,7 +136,7 @@ list_of_modules=handle.list_modules()
 while(list_of_modules!=None):
     tmp=next(list_of_modules)
     if(tmp.name=="engine2.dll"):
-        print('found engine.dll')
+        print('found engine2.dll')
         off_enginedll=tmp.lpBaseOfDll
         break
 
@@ -89,19 +144,19 @@ while(list_of_modules!=None):
 OpenProcess = windll.kernel32.OpenProcess
 CloseHandle = windll.kernel32.CloseHandle
 PROCESS_ALL_ACCESS = 0x1F0FFF
-game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
+game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1]) # returns an integer
 
 
 SAVE_TRAIN_DATA = True
 IS_PAUSE = False # pause saving of data
-n_loops = 0 # how many frames looped 
+n_loops = 0 # how many times loop through 
 training_data=[]
-img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=False)
+# img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=False)
 print('starting loop, press q to quit...')
 queue = multiprocessing.Queue()
 server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
-
-onetime = True
+cur_timestamp = time.time()
+old_timestamp = cur_timestamp
 while True:
     loop_start_time = time.time()
     n_loops += 1
@@ -113,18 +168,17 @@ while True:
     if 'Q' in keys_pressed:
         # exit loop
         print('exiting...')
+        server.server_close()
         break
 
     curr_vars={}
 
     # grab address of ME = player, and see what observation mode I'm in
-    player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
-    curr_vars['obs_mode'] = read_memory(game,(player + m_iObserverMode),'i')
+    # player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
+    # curr_vars['obs_mode'] = read_memory(game,(player + m_iObserverMode),'i')
 
     # --- get GSI info
-    print('getting server')
     server.handle_request()
-    # server = MyServer(('localhost', 3000), MyRequestHandler)
 
     print('got server')
     # server.handle_request()
@@ -133,7 +187,7 @@ while True:
         continue 
     # need some logic to automate when record the game or not
     # first let's not proceed if the map is loading
-    if 'map' not in server.data_all.keys():
+    if 'map' not in server.data_all.keys() and 0:
         print('not recording, map not in keys')
         time.sleep(5)
         continue
@@ -148,7 +202,7 @@ while True:
         print('not recording, not live')
         # seem to need to restart the gsi connection between each game
         server.server_close()
-        server = MyServer(('localhost', 3000), MyRequestHandler)
+        server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
         server.handle_request()
 
         while server.data_all['map']['phase']!='live' and server.data_all['map']['phase']!='warmup':
@@ -166,7 +220,7 @@ while True:
             ReleaseKey(w_char)
 
             server.server_close()
-            server = MyServer(('localhost', 3000), MyRequestHandler)
+            server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
             server.handle_request()
             if 'map' not in server.data_all.keys(): # hacky way to avoid this triggering failure
                 server.data_all['map']={}
@@ -184,22 +238,21 @@ while True:
 
         # switch to first person view
         time.sleep(2)
-        player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
-        obs_mode_i = read_memory(game,(player + m_iObserverMode),'i')
-        while obs_mode_i in [5,6]:
-            print(obs_mode_i)
-            HoldKey(space_char)
-            time.sleep(0.1)
-            ReleaseKey(space_char)
-            time.sleep(2)
-            obs_mode_i = read_memory(game,(player + m_iObserverMode),'i')
-        continue
+        # player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
+        # obs_mode_i = read_memory(game,(player + m_iObserverMode),'i')
 
     # don't proceed if not observing from first person, or something wrong with GSI
-    if 'team' not in server.data_all['player'].keys() or curr_vars['obs_mode'] in [5,6]:
-        print('not recording')
-        time.sleep(5)
+    try:
+        if 'team' not in server.data_all['player'].keys():
+            print('not recording')
+            time.sleep(5)
+            continue
+    except:
+        print("prob KeyError: 'player'")
         continue
+    
+    if SAVE_TRAIN_DATA:
+        img_small = capture_win_alt("Counter-Strike 2", hwin_csgo)
 
     # sort through GSI data package and get useful info
     curr_vars['gsi_team'] = server.data_all['player']['team']
@@ -224,14 +277,52 @@ while True:
             else:
                 curr_vars['gsi_ammo'] = curr_vars['gsi_weap_active']['ammo_clip']
 
+    try:
+        cur_x, cur_y, cur_z = server.data_all['player']['position'].split(',')
+    except:
+        print("can't find cur_x, cur_y, cur_z, set to 0")
+        continue
+    cur_timestamp = time.time()
+
+    cur_x = float(cur_x)
+    cur_y = float(cur_y.lstrip())
+    cur_z = float(cur_z.rstrip())
+
+    try:
+        old_x, old_y, old_z = server.data_all['previously']['player']['position'].split(',')
+    except:
+        print("no server.data_all['previously'], use player current position instead")
+        old_x, old_y, old_z = server.data_all['player']['position'].split(',')
+    old_x = float(old_x)
+    old_y = float(old_y.lstrip())
+    old_z = float(old_z.rstrip())
+
+    if cur_timestamp-old_timestamp == 0: # edge case where previously coord set to 0
+        vel_x = 0
+        vel_y = 0
+        curr_vars['vel_3'] = 0
+    else:
+        vel_x = (cur_x - old_x)/(cur_timestamp-old_timestamp)
+        vel_y = (cur_y - old_y)/(cur_timestamp-old_timestamp)
+        curr_vars['vel_3'] = (cur_z - old_z)/(cur_timestamp-old_timestamp)
+
+    # get player view angle, something like yaw and vertical angle
+    curr_vars['viewangle_vert'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles), "f")
+    curr_vars['viewangle_xy'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles + 0x4), "f")
+    curr_vars['vel_1'] = vel_x*np.cos(np.deg2rad(-curr_vars['viewangle_xy'])) -vel_y * np.sin(-np.deg2rad(curr_vars['viewangle_xy']))
+    curr_vars['vel_2'] = vel_x*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +vel_y * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
+    curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
+    old_timestamp = cur_timestamp
+
+
     # --- get RAM info
-    if curr_vars['obs_mode']==4: # figure out which player I'm observing
-        obs_handle = read_memory(game,(player + m_hObserverTarget),'i')
-        obs_id = (obs_handle & 0xFFF)
-        obs_address = read_memory(game,off_clientdll + dwEntityList + ((obs_handle & 0xFFF)-1)*0x10, "i")
-    else: # else if not observing, just use me as player
-        obs_address = player
-        obs_id=None
+    # if curr_vars['obs_mode']==4: # figure out which player I'm observing
+    #     obs_handle = read_memory(game,(player + m_hObserverTarget),'i')
+    #     obs_id = (obs_handle & 0xFFF)
+    #     obs_address = read_memory(game,off_clientdll + dwEntityList + ((obs_handle & 0xFFF)-1)*0x10, "i")
+    # else: # else if not observing, just use me as player
+    #     obs_address = player
+    #     obs_id=None
         
     # get player info
     # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
@@ -239,21 +330,17 @@ while True:
     # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
 
     # get player position, x,y,z and height
-    curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
-    curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
-    curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
-    curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
-    print(curr_vars)
+    # curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
+    # curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
+    # curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
+    # curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
     # get player velocity, x,y,z
-    curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
-    curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
-    curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
-    curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
+    # curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
+    # curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
+    # curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
+    # curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
 
-    # get player view angle, something like yaw and vertical angle
-    enginepointer = read_memory(game,(off_enginedll + dwClientState), "i")
-    curr_vars['viewangle_vert'] = read_memory(game,(enginepointer + dwClientState_ViewAngles), "f")
-    curr_vars['viewangle_xy'] = read_memory(game,(enginepointer + dwClientState_ViewAngles + 0x4), "f")
+
 
     # zvert_rads is 0 when staring at ground, pi when starting at ceiling
     curr_vars['zvert_rads'] = (-curr_vars['viewangle_vert'] + 90)/360 * (2*np.pi)
@@ -295,15 +382,10 @@ while True:
     curr_vars['vel_theta_abs'] = vel_theta_abs
 
     # get weapon info
-    weapon_handle = read_memory(game,obs_address + m_hActiveWeapon, "i")
-    weapon_address = read_memory(game,off_clientdll + dwEntityList + ((weapon_handle & 0xFFF)-1)*0x10, "i")
-    curr_vars['itemdef'] = read_memory(game,(weapon_address + m_iItemDefinitionIndex), "i") 
-    curr_vars['ammo_active'] = read_memory(game,(weapon_address + m_iClip1), "i")
-
-    try:
-        print('obs_hp',curr_vars['obs_health'],'gsi_hp',curr_vars['gsi_health'], curr_vars['gsi_team'], curr_vars['gsi_kills'],'mouse xy_rad',np.round(curr_vars['viewangle_xy'],2), 'zvert_rads', curr_vars['viewangle_vert'], 'obs_mode', curr_vars['obs_mode'], 'ammo', curr_vars['ammo_active'], curr_vars['gsi_ammo'], curr_vars['localpos1'], curr_vars['vel_1'], curr_vars['vel_2'])
-    except:
-        print('not printing')
+    # weapon_handle = read_memory(game,obs_address + m_hActiveWeapon, "i")
+    # weapon_address = read_memory(game,off_clientdll + dwEntityList + ((weapon_handle & 0xFFF)-1)*0x10, "i")
+    # curr_vars['itemdef'] = read_memory(game,(weapon_address + m_iItemDefinitionIndex), "i") 
+    # curr_vars['ammo_active'] = read_memory(game,(weapon_address + m_iClip1), "i")
 
     # save image and action
     timeleft=9999
@@ -322,8 +404,10 @@ while True:
 
         if len(training_data) >= 1000:
             # save about every minute
-            file_name = folder_name+save_name+'{}.npy'.format(starting_value)
-            np.save(file_name,training_data)
+            file_name = folder_name+save_name+'{}.pkl'.format(starting_value)
+            with open(file_name, 'wb') as file:
+                pickle.dump(training_data, file)
+
             print('SAVED', starting_value)
             training_data = []
             starting_value += 1
@@ -336,8 +420,8 @@ while True:
 
 
     # grab image
-    if SAVE_TRAIN_DATA:
-        img_small = grab_window(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=is_show_img)
+    # if SAVE_TRAIN_DATA:
+        # img_small = capture_win_alt(hwin_csgo, game_resolution=csgo_game_res, SHOW_IMAGE=is_show_img)
         # we put the image grab last as want the time lag to match when
         # will be running fwd pass through NN
 

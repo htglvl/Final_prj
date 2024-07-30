@@ -48,7 +48,7 @@ import yaml
 # first make sure offset list is reset (after csgo updates may shift about)
 
 key_to_find = [
-    'dwLocalPlayerController',
+    'dwLocalPlayerPawn',
     'm_iObserverMode',
     'm_hObserverTarget',
     'dwEntityList',
@@ -64,12 +64,14 @@ key_to_find = [
     'm_iClip1',
     'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
     'dwNetworkGameClient_signOnState',
-    'm_vecVelocity'
+    'm_vecVelocity',
+    'm_pObserverServices'
 ]
 
 # Special key in toml_data
 special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_State', 'dwLocalPlayer', 'dwClientState_ViewAngles']
 key_to_keep = set(key_to_find) | set(special_key)
+
 
 if True:
     offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
@@ -84,7 +86,7 @@ if True:
     foundthings = {**x, **y, **z}
 
     for key, value in foundthings.items():
-        if key == "dwLocalPlayerController":
+        if key == "dwLocalPlayerPawn":
             toml_data['signatures']['dwLocalPlayer'] = value
         if key == "dwViewAngles":
             toml_data['signatures']['dwClientState_ViewAngles'] = value
@@ -108,7 +110,7 @@ if True:
 
 from dm_hazedumper_offsets import *
 
-save_name = 'dm_test_auto_' # stub name of file to save as
+save_name = 'dm_test_manual_' # stub name of file to save as
 
 folder_name = "D:\CODE_WORKSPACE\Đồ án\Counter-Strike_Behavioural_Cloning\cs2_bot_train"
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
@@ -161,7 +163,8 @@ training_data=[]
 print('starting loop, press q to quit...')
 queue = multiprocessing.Queue()
 server = ListenerServer(("127.0.0.1", 3000), PostHandler, multiprocessing.Queue())
-onetime = True
+cur_timestamp = time.time()
+old_timestamp = cur_timestamp
 while True:
     loop_start_time = time.time()
     n_loops += 1
@@ -194,9 +197,13 @@ while True:
 
 
     # don't proceed if not observing from first person, or something wrong with GSI
-    if 'team' not in server.data_all['player'].keys():
-        print('not recording')
-        time.sleep(5)
+    try:
+        if 'team' not in server.data_all['player'].keys():
+            print('not recording')
+            time.sleep(5)
+            continue
+    except:
+        print("prob KeyError: 'player'")
         continue
 
     if SAVE_TRAIN_DATA:
@@ -225,70 +232,72 @@ while True:
             else:
                 curr_vars['gsi_ammo'] = curr_vars['gsi_weap_active']['ammo_clip']
 
+    # try:
+    #     cur_x, cur_y, cur_z = server.data_all['player']['position'].split(',')
+    # except:
+    #     print("can't find cur_x, cur_y, cur_z, set to 0")
+    #     continue
+    # cur_timestamp = time.time()
 
-    cur_x, cur_y, cur_z = server.data_all['player']['position'].split(',')
-    cur_timestamp = time.time()
+    # cur_x = float(cur_x)
+    # cur_y = float(cur_y.lstrip())
+    # cur_z = float(cur_z.rstrip())
 
-    cur_x = float(cur_x)
-    cur_y = float(cur_y.lstrip())
-    cur_z = float(cur_z.rstrip())
+    # try:
+    #     old_x, old_y, old_z = server.data_all['previously']['player']['position'].split(',')
+    # except:
+    #     print("no server.data_all['previously'], use player current position instead")
+    #     old_x, old_y, old_z = server.data_all['player']['position'].split(',')
+    # old_x = float(old_x)
+    # old_y = float(old_y.lstrip())
+    # old_z = float(old_z.rstrip())
 
-    if onetime:
-        onetime = False
-        old_timestamp = cur_timestamp
+    # if cur_timestamp-old_timestamp == 0: # edge case where previously coord set to 0
+    #     vel_x = 0
+    #     vel_y = 0
+    #     curr_vars['vel_3'] = 0
+    # else:
+    #     vel_x = (cur_x - old_x)/(cur_timestamp-old_timestamp)
+    #     vel_y = (cur_y - old_y)/(cur_timestamp-old_timestamp)
+    #     curr_vars['vel_3'] = (cur_z - old_z)/(cur_timestamp-old_timestamp)
 
-    try:
-        old_x, old_y, old_z = server.data_all['previously']['player']['position'].split(',')
-    except:
-        print("no server.data_all['previously'], use player current position instead")
-        old_x, old_y, old_z = server.data_all['player']['position'].split(',')
-    old_x = float(old_x)
-    old_y = float(old_y.lstrip())
-    old_z = float(old_z.rstrip())
-
-    if cur_timestamp-old_timestamp == 0: # edge case where previously coord set to 0
-        vel_x = 0
-        vel_y = 0
-        curr_vars['vel_3'] = 0
-    else:
-        vel_x = (cur_x - old_x)/(cur_timestamp-old_timestamp)
-        vel_y = (cur_y - old_y)/(cur_timestamp-old_timestamp)
-        curr_vars['vel_3'] = (cur_z - old_z)/(cur_timestamp-old_timestamp)
-
-    # get player view angle, something like yaw and vertical angle
+    # # get player view angle, something like yaw and vertical angle
     curr_vars['viewangle_vert'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles), "f")
     curr_vars['viewangle_xy'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles + 0x4), "f")
-    curr_vars['vel_1'] = vel_x*np.cos(np.deg2rad(-curr_vars['viewangle_xy'])) -vel_y * np.sin(-np.deg2rad(curr_vars['viewangle_xy']))
-    curr_vars['vel_2'] = vel_x*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +vel_y * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
-    curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
-    old_timestamp = cur_timestamp
+    # curr_vars['vel_1'] = vel_x*np.cos(np.deg2rad(-curr_vars['viewangle_xy'])) -vel_y * np.sin(-np.deg2rad(curr_vars['viewangle_xy']))
+    # curr_vars['vel_2'] = vel_x*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +vel_y * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
+    # curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
+    # old_timestamp = cur_timestamp
 
-
+    player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
+    observe_service = read_memory(game,(player + m_pObserverServices),'q')
+    curr_vars['obs_mode'] = read_memory(game,(observe_service + m_iObserverMode), 'i')
     # --- get RAM info
-    # if curr_vars['obs_mode']==4: # figure out which player I'm observing
-    #     obs_handle = read_memory(game,(off_clientdll + m_hObserverTarget),'i')
+    # if curr_vars['obs_mode']==2: # figure out which player I'm observing, obs mode = 2 is first person inspect
+    #     obs_handle = read_memory(game,(off_clientdll + m_hObserverTarget),'q')
     #     obs_id = (obs_handle & 0xFFF)
-    #     obs_address = read_memory(game,off_clientdll + dwEntityList + ((obs_handle & 0xFFF)-1)*0x10, "i")
+    #     obs_address = read_memory(game,off_clientdll + dwEntityList + ((obs_handle & 0xFFF)-1)*0x10, "q")
     # else: # else if not observing, just use me as player
-    #     obs_address = player
+    obs_address = player
     #     obs_id=None
         
     # get player info
-    # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
-    # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
-    # curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
-    # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
+    curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
+    print('health obs')
+    print(curr_vars['obs_health'])
+    curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
+    curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
 
     # get player position, x,y,z and height
-    # curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
-    # curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
-    # curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
-    # curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
+    curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
+    curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
+    curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
+    curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
     # get player velocity, x,y,z
-    # curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
-    # curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
-    # curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
-    # curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
+    curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
+    curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
+    curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
+    curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
 
 
 
@@ -301,6 +310,7 @@ while True:
     elif curr_vars['viewangle_xy']>=0:
         xy_deg = 360-curr_vars['viewangle_xy']
     curr_vars['xy_rad'] = xy_deg/360*(2*np.pi)
+
     # print('mouse xy_rad',np.round(curr_vars['xy_rad'],2), end='\r')
     # print('obs_hp',curr_vars['obs_health'],'gsi_hp',curr_vars['gsi_health'], curr_vars['gsi_team'], curr_vars['gsi_kills'],'mouse xy_rad',np.round(curr_vars['xy_rad'],2), end='\r')
 

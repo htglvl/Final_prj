@@ -5,9 +5,9 @@ timestamp = 1693948329
 dwClientState = 5434272
 dwClientState_GetLocalPlayer = 240
 dwClientState_State = 608
-dwClientState_ViewAngles = 27447880
-dwEntityList = 26991992
-dwLocalPlayer = 27318696
+dwClientState_ViewAngles = 27452008
+dwEntityList = 26996432
+dwLocalPlayer = 25315864
 
 #netvars
 
