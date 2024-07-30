@@ -46,32 +46,6 @@ import yaml
 # so make sure these tfghum are not bound to anything in the game settings
 
 # first make sure offset list is reset (after csgo updates may shift about)
-key_to_find = [
-        'dwLocalPlayerPawn',
-        'm_iObserverMode',
-        'm_hObserverTarget',
-        'dwEntityList',
-        'm_iHealth',
-        'm_iFOVStart',
-        'm_bIsScoped',
-        'm_vecOrigin',
-        'm_vecViewOffset',
-        'dwNetworkGameClient',
-        'dwViewAngles',
-        'm_hActiveWeapon',
-        'm_iItemDefinitionIndex',
-        'm_iClip1',
-        'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
-        'dwNetworkGameClient_signOnState',
-        'm_vecVelocity',
-        'm_pObserverServices',
-        'm_pCameraServices',
-        'm_fFlags',
-        'm_pGameSceneNode'
-]
-# Special key in toml_data
-special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_State', 'dwLocalPlayer', 'dwClientState_ViewAngles']
-key_to_keep = set(key_to_find) | set(special_key)
 
 
 if True:
@@ -91,7 +65,6 @@ from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_manual_' # stub name of file to save as
 
-folder_name = "..\\raw_data\\"
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
 starting_value = 1
 
@@ -387,7 +360,7 @@ while True:
 
         if len(training_data) >= 1000:
             # save about every minute
-            file_name = folder_name+save_name+'{}.pkl'.format(starting_value)
+            file_name = f'{folder_name}+{save_name}+{starting_value}+{suffix}.pkl'
             with open(file_name, 'wb') as file:
                 pickle.dump(training_data, file)
 

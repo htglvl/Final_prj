@@ -7,7 +7,37 @@ import pickle
 # also stores some key functions used in several places
 
 loop_fps=16 # 16 is main one, but can try to run at 24
+key_to_find = [
+        'dwLocalPlayerPawn',
+        'm_iObserverMode',
+        'm_hObserverTarget',
+        'dwEntityList',
+        'm_iHealth',
+        'm_iFOVStart',
+        'm_bIsScoped',
+        'm_vecOrigin',
+        'm_vecViewOffset',
+        'dwNetworkGameClient',
+        'dwViewAngles',
+        'm_hActiveWeapon',
+        'm_iItemDefinitionIndex',
+        'm_iClip1',
+        'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
+        'dwNetworkGameClient_signOnState',
+        'm_vecVelocity',
+        'm_pObserverServices',
+        'm_pCameraServices',
+        'm_fFlags',
+        'm_pGameSceneNode'
+] # find all variable in output folder and put it in one folder for ease of access
+# Special key in toml_data
 
+
+suffix = 'Hoang' # suffex for data folder when recording data (useful when you have multiple laptop run simultaniously)
+
+
+
+folder_name = "..\\raw_data\\" # where to save the recorded data (we put it outside of project file to avoid git stage)
 # dimensions of image to reduce to
 # used when grabbing screen and also building NN
 csgo_img_dimension = (150,280) # offset_height_top = 135, offset_height_bottom = 135, offset_sides = 100
