@@ -248,7 +248,7 @@ while True:
     # curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
     # old_timestamp = cur_timestamp
 
-    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "i")
+    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
     observe_service = read_memory(game,(player + m_pObserverServices),'q')
     curr_vars['obs_mode'] = read_memory(game,(observe_service + m_iObserverMode), 'i')
     # --- get RAM info
@@ -262,6 +262,7 @@ while True:
         
     # get player info
     curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
+    
     print('health obs')
     print(curr_vars['obs_health'])
     camera_service = read_memory(game, (obs_address + m_pCameraServices), 'q')
@@ -274,7 +275,7 @@ while True:
     curr_vars['localpos1'] = read_memory(game,(gameSceneNode + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
     curr_vars['localpos2'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
     curr_vars['localpos3'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
-    curr_vars['height'] = read_memory(game,(obs_address + m_fFlags), "h") # from 128 to 131 129 is normal, 128 is crouch, 131 is jump 130 is jump crouch
+    curr_vars['height'] = read_memory(game,(obs_address + m_fFlags), "h") # from 128 to 131, 129 is normal, 128 is crouch, 131 is jump 130 is jump crouch
     # get player velocity, x,y,z
     curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
     curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")

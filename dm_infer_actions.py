@@ -135,7 +135,7 @@ for file_num in range(starting_value,highest_num+1):
                 infer_actions[i-0][0].append('space')
 
         # check for crouch
-        if  curr_vars['height'] < 50 and curr_vars['height']>0.1: # a weird glitch where at times always zero
+        if  curr_vars['height'] == 128: # a weird glitch where at times always zero
             if i>1: 
                 infer_actions[i-2][0].append('ctrl')
 
