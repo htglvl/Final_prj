@@ -154,10 +154,14 @@ dwEntityList = 0x19BEED0
 m_szLastPlaceName = 0x14A4
 m_vecVelocity = 992
 m_iHealth = 0x324
-
-
+m_pCameraServices = 0x1130
+m_iFOV = 0x210
+m_bIsScoped = 0x22A0
+m_fFlags = 0x3CC
+m_pGameSceneNode = 0x308
 offset = 0
 jump = 0x4
+m_vecOrigin = 0x88
 # while True:
 #     localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
 #     obs_mode = read_memory(game,(localPlayer + m_iObserverMode),'i')
@@ -167,4 +171,9 @@ jump = 0x4
 
 while True:
     localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+    gameSceneNode = read_memory(game,(localPlayer + m_pGameSceneNode), 'q')
+    posx=read_memory(game, (gameSceneNode + m_vecOrigin), 'f')
+    posy=read_memory(game, (gameSceneNode + m_vecOrigin + 0x4), 'f')
+    posz=read_memory(game, (gameSceneNode + m_vecOrigin + 0x8), 'f')
+    print(posx, posy, posz) # jump -1 base 129, crouch +2
 

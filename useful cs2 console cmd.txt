@@ -10,3 +10,4 @@ sv_cheats true
 spectatemode 3 third person
 spectatemode 4 freeview
 spectatemode 2,5 maybe first?
+cl_showpos shows eye position, m_vecOrigin is somewhere between your feet

@@ -46,26 +46,31 @@ import yaml
 # so make sure these tfghum are not bound to anything in the game settings
 
 # first make sure offset list is reset (after csgo updates may shift about)
-
+m_pObserverServices = 4368
+m_pCameraServices = 0x1130
+m_fFlags = 0x3CC
+m_pGameSceneNode = 0x308
 key_to_find = [
-    'dwLocalPlayerPawn',
-    'm_iObserverMode',
-    'm_hObserverTarget',
-    'dwEntityList',
-    'm_iHealth',
-    'm_iFOVStart',
-    'm_bIsScoped',
-    'm_vecOrigin',
-    'm_vecViewOffset',
-    'dwNetworkGameClient',
-    'dwViewAngles',
-    'm_hActiveWeapon',
-    'm_iItemDefinitionIndex',
-    'm_iClip1',
-    'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
-    'dwNetworkGameClient_signOnState',
-    'm_vecVelocity',
-    'm_pObserverServices'
+        'dwLocalPlayerPawn',
+        'm_iObserverMode',
+        'm_hObserverTarget',
+        'dwEntityList',
+        'm_iHealth',
+        'm_iFOVStart',
+        'm_bIsScoped',
+        'm_vecOrigin',
+        'm_vecViewOffset',
+        'dwNetworkGameClient',
+        'dwViewAngles',
+        'm_hActiveWeapon',
+        'm_iItemDefinitionIndex',
+        'm_iClip1',
+        'dwNetworkGameClient_localPlayer', # formerly known as dwNetworkGameClient_getLocalPlayer
+        'dwNetworkGameClient_signOnState',
+        'm_vecVelocity',
+        'm_pObserverServices',
+        'm_pCameraServices',
+        'm_fFlags'
 ]
 
 # Special key in toml_data
@@ -285,14 +290,16 @@ while True:
     curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
     print('health obs')
     print(curr_vars['obs_health'])
-    curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
-    curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
+    camera_service = read_memory(game, (obs_address + m_pCameraServices), 'q')
+    curr_vars['obs_fov'] = read_memory(game,(camera_service + m_iFOVStart),'i') # m_iFOVStart m_iFOV
+    # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
 
     # get player position, x,y,z and height
-    curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
-    curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
-    curr_vars['localpos3'] = read_memory(game,(obs_address + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
-    curr_vars['height'] = read_memory(game,(obs_address + m_vecViewOffset + 0x8), "f") # this returns z height of player, goes between 64.06 and 46.04
+    gameSceneNode = read_memory(game,(obs_address + m_pGameSceneNode), 'q')
+    curr_vars['localpos1'] = read_memory(game,(gameSceneNode + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
+    curr_vars['localpos2'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
+    curr_vars['localpos3'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
+    curr_vars['height'] = read_memory(game,(obs_address + m_fFlags), "h") # from 128 to 131 129 is normal, 128 is crouch, 131 is jump 130 is jump crouch
     # get player velocity, x,y,z
     curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
     curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
