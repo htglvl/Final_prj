@@ -10,4 +10,5 @@ sv_cheats true
 spectatemode 3 third person
 spectatemode 4 freeview
 spectatemode 2,5 maybe first?
-cl_showpos shows eye position, m_vecOrigin is somewhere between your feet
+cl_showpos shows eye position, m_vecOrigin is somewhere between your feet so m_vecorigin is above cl_showpos about 50
+after copy-paste config file, restart game

@@ -336,22 +336,22 @@ while True:
 
     curr_vars['tp_wasd'] = []
     if 'T' in keys_pressed:
-        HoldKey(w_char)
+        # HoldKey(w_char)
         curr_vars['tp_wasd'].append('w')
     if 'F' in keys_pressed:
-        HoldKey(a_char)
+        # HoldKey(a_char)
         curr_vars['tp_wasd'].append('a')
     if 'G' in keys_pressed:
-        HoldKey(s_char)
+        # HoldKey(s_char)
         curr_vars['tp_wasd'].append('s')
     if 'H' in keys_pressed:
-        HoldKey(d_char)
+        # HoldKey(d_char)
         curr_vars['tp_wasd'].append('d')
     if 'U' in keys_pressed:
-        HoldKey(r_char)
+        # HoldKey(r_char)
         curr_vars['tp_wasd'].append('r')
     if 'M' in keys_pressed:
-        HoldKey(space_char)
+        # HoldKey(space_char)
         curr_vars['tp_wasd'].append('space')
 
     if 'T' not in keys_pressed:
