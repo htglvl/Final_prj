@@ -46,10 +46,6 @@ import yaml
 # so make sure these tfghum are not bound to anything in the game settings
 
 # first make sure offset list is reset (after csgo updates may shift about)
-m_pObserverServices = 4368
-m_pCameraServices = 0x1130
-m_fFlags = 0x3CC
-m_pGameSceneNode = 0x308
 key_to_find = [
         'dwLocalPlayerPawn',
         'm_iObserverMode',
@@ -70,18 +66,16 @@ key_to_find = [
         'm_vecVelocity',
         'm_pObserverServices',
         'm_pCameraServices',
-        'm_fFlags'
+        'm_fFlags',
+        'm_pGameSceneNode'
 ]
-
 # Special key in toml_data
 special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_State', 'dwLocalPlayer', 'dwClientState_ViewAngles']
 key_to_keep = set(key_to_find) | set(special_key)
 
 
 if True:
-    offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
-    toml_data = toml.loads(offsets_old)
-
+    time_stamp = int(time.time())
     client_dll_data = read_json_file("output\\engine2.dll.json")
     engine2_data = read_json_file("output\\client.dll.json")
     offset_data = read_json_file("output\\offsets.json")
@@ -89,29 +83,9 @@ if True:
     y = find_keys(engine2_data, key_to_find)
     z = find_keys(offset_data, key_to_find)
     foundthings = {**x, **y, **z}
+    foundthings = {"timestamp": time_stamp, **foundthings}
 
-    for key, value in foundthings.items():
-        if key == "dwLocalPlayerPawn":
-            toml_data['signatures']['dwLocalPlayer'] = value
-        if key == "dwViewAngles":
-            toml_data['signatures']['dwClientState_ViewAngles'] = value
-        if key in toml_data['signatures']:
-            toml_data['signatures'][key] = value
-        if key in toml_data['netvars']:
-            toml_data['netvars'][key] = value
-        if key == "dwNetworkGameClient":
-            toml_data['signatures']['dwClientState'] = value
-        if key == 'dwNetworkGameClient_signOnState':
-            toml_data['signatures']['dwClientState_State'] = value
-        if key == 'dwNetworkGameClient_localPlayer':
-            toml_data['signatures']['dwClientState_GetLocalPlayer'] = value
-    toml_data = {
-        'timestamp': toml_data['timestamp'],
-        'signatures': filter_keys(toml_data['signatures'], key_to_keep),
-        'netvars': filter_keys(toml_data['netvars'], key_to_keep)
-    }
-    del requests
-    update_offsets(toml.dumps(toml_data))
+    update_offsets(toml.dumps(foundthings))
 
 from dm_hazedumper_offsets import *
 
@@ -267,14 +241,14 @@ while True:
     #     curr_vars['vel_3'] = (cur_z - old_z)/(cur_timestamp-old_timestamp)
 
     # # get player view angle, something like yaw and vertical angle
-    curr_vars['viewangle_vert'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles), "f")
-    curr_vars['viewangle_xy'] = read_memory(game,(off_clientdll + dwClientState_ViewAngles + 0x4), "f")
+    curr_vars['viewangle_vert'] = read_memory(game,(off_clientdll + dwViewAngles), "f")
+    curr_vars['viewangle_xy'] = read_memory(game,(off_clientdll + dwViewAngles + 0x4), "f")
     # curr_vars['vel_1'] = vel_x*np.cos(np.deg2rad(-curr_vars['viewangle_xy'])) -vel_y * np.sin(-np.deg2rad(curr_vars['viewangle_xy']))
     # curr_vars['vel_2'] = vel_x*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +vel_y * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
     # curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
     # old_timestamp = cur_timestamp
 
-    player = read_memory(game,(off_clientdll + dwLocalPlayer), "i")
+    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "i")
     observe_service = read_memory(game,(player + m_pObserverServices),'q')
     curr_vars['obs_mode'] = read_memory(game,(observe_service + m_iObserverMode), 'i')
     # --- get RAM info
@@ -293,6 +267,7 @@ while True:
     camera_service = read_memory(game, (obs_address + m_pCameraServices), 'q')
     curr_vars['obs_fov'] = read_memory(game,(camera_service + m_iFOVStart),'i') # m_iFOVStart m_iFOV
     # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
+    print(curr_vars['obs_fov'])
 
     # get player position, x,y,z and height
     gameSceneNode = read_memory(game,(obs_address + m_pGameSceneNode), 'q')
@@ -305,6 +280,10 @@ while True:
     curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
     curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
     curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
+
+    print(curr_vars['localpos1'])
+    print(curr_vars['localpos2'])
+    print(curr_vars['localpos3'])
 
 
 

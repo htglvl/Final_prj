@@ -1,24 +1,22 @@
-timestamp = 1693948329
-
-#signatures
-
-dwClientState = 5434272
-dwClientState_GetLocalPlayer = 240
-dwClientState_State = 608
-dwClientState_ViewAngles = 27452008
-dwEntityList = 26996432
-dwLocalPlayer = 25315864
-
-#netvars
-
-m_bIsScoped = 8864
-m_hActiveWeapon = 88
-m_hObserverTarget = 68
-m_iClip1 = 5568
+timestamp = 1722356779
 m_iFOVStart = 532
-m_iHealth = 804
-m_iItemDefinitionIndex = 442
-m_iObserverMode = 64
+m_fFlags = 99
 m_vecOrigin = 136
+m_hObserverTarget = 68
+m_iObserverMode = 64
+m_hActiveWeapon = 88
+m_iHealth = 804
+m_pGameSceneNode = 776
 m_vecVelocity = 992
 m_vecViewOffset = 3152
+m_pCameraServices = 4400
+m_pObserverServices = 4368
+m_iClip1 = 5568
+m_bIsScoped = 8864
+m_iItemDefinitionIndex = 442
+dwEntityList = 26996432
+dwLocalPlayerPawn = 25315864
+dwViewAngles = 27452008
+dwNetworkGameClient = 5434272
+dwNetworkGameClient_localPlayer = 240
+dwNetworkGameClient_signOnState = 608
