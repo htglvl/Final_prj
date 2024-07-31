@@ -5,6 +5,7 @@ m_hObserverTarget = 68
 m_iObserverMode = 64
 m_hActiveWeapon = 88
 m_fFlags = 972
+m_fFlags = 972
 m_iHealth = 804
 m_pGameSceneNode = 776
 m_vecVelocity = 992
