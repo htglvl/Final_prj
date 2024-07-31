@@ -6,6 +6,7 @@ import struct
 import math
 import random
 
+import h5py
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -38,12 +39,12 @@ summary_stats=[]
 
 # for each file of interest
 for file_num in range(starting_value,highest_num+1):
-    file_name = folder_name+file_name_stub + str(file_num) + '.npy'
+    file_name = folder_name+file_name_stub + str(file_num) + '.pkl'
 
     # try to find file
     is_found=False
     for file in os.listdir(folder_name):
-        if file_name_stub + str(file_num) + '.npy' == file:
+        if file_name_stub + str(file_num) + '.pkl' == file:
             is_found=True
             break
     if not is_found:
@@ -53,7 +54,7 @@ for file_num in range(starting_value,highest_num+1):
     print('\nload train data from ', file_name, ' ...')
 
     training_data = np.load(file_name, allow_pickle=True)
-
+    
     # actions will be of format
     # [keys_pressed, mouse_x, mouse_y, press_mouse_l, press_mouse_r]
     # keys_pressed is a list of all keys, e.g. ['w','a','ctrl']
@@ -81,7 +82,8 @@ for file_num in range(starting_value,highest_num+1):
         # print(i,end='\r')
         curr_vars = training_data[i][1]
         prev_vars = training_data[i-1][1]
-
+        # print('gsi_health' in curr_vars)
+        # print('||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||')
 
         # first do some checks to see if data is good
 
@@ -89,24 +91,30 @@ for file_num in range(starting_value,highest_num+1):
         if True:
             # if curr_vars['obs_health']==0 or prev_vars['obs_health']==0 or not curr_vars['found_active'] or not prev_vars['found_active']:
             if curr_vars['gsi_health']==0 or prev_vars['gsi_health']==0 or not curr_vars['found_active'] or not prev_vars['found_active']:
-                if curr_vars['obs_health']==0:
+                if 'obs_health' in curr_vars and curr_vars['obs_health']==0:
                     dead_skipped+=1
                 else:
                     skipped+=1
                 continue
 
         # look for falling out of sync, allowing for one frame of slippage as GSI is slightly delayed often
-        if curr_vars['obs_health'] != curr_vars['gsi_health'] and prev_vars['obs_health'] != curr_vars['gsi_health']:
-            # print('hp ram',curr_vars['obs_health'] , 'gsi', curr_vars['gsi_health'])
-            ram_gsi_disagree_hp+=1
+        if 'obs_health' in curr_vars: # Case for manual data
+            if curr_vars['obs_health'] != curr_vars['gsi_health'] and prev_vars['obs_health'] != curr_vars['gsi_health']:
+                # print('hp ram',curr_vars['obs_health'] , 'gsi', curr_vars['gsi_health'])
+                ram_gsi_disagree_hp+=1
+        # else: # Case for auto data
+        #     if prev_vars['gsi_health'] != curr_vars['gsi_health']:
+        #         ram_gsi_disagree_hp += 1
 
-        if curr_vars['ammo_active'] != curr_vars['gsi_ammo'] and prev_vars['ammo_active'] != curr_vars['gsi_ammo']:
-        # if np.abs(curr_vars['ammo_active'] - curr_vars['gsi_ammo'])>1:
-            # print('ammo ram',curr_vars['ammo_active'], 'gsi', curr_vars['gsi_ammo'] )
-            ram_gsi_disagree_ammo+=1
+        # if curr_vars['ammo_active'] != curr_vars['gsi_ammo'] and prev_vars['ammo_active'] != curr_vars['gsi_ammo']:
+        # # if np.abs(curr_vars['ammo_active'] - curr_vars['gsi_ammo'])>1:
+        #     # print('ammo ram',curr_vars['ammo_active'], 'gsi', curr_vars['gsi_ammo'] )
+        #     ram_gsi_disagree_ammo+=1
 
-        if curr_vars['obs_mode']!=4:
-            obs_count+=1 # count how many times were observing from 3rd person or something -- won't want these
+        # if curr_vars['obs_mode'] in training_data:
+        # if 'obs_mode' in curr_vars:
+        # if 'obs_mode' in curr_vars and curr_vars['obs_mode']!=4:
+        #     obs_count+=1 # count how many times were observing from 3rd person or something -- won't want these
 
         if np.abs(curr_vars['xy_rad']-prev_vars['xy_rad'])<0.001:
             mouse_static+=1
@@ -135,7 +143,7 @@ for file_num in range(starting_value,highest_num+1):
                 infer_actions[i-0][0].append('space')
 
         # check for crouch
-        if  curr_vars['height'] == 128: # a weird glitch where at times always zero
+        if 'height' in curr_vars and curr_vars['height'] == 128: # a weird glitch where at times always zero
             if i>1: 
                 infer_actions[i-2][0].append('ctrl')
 
@@ -151,20 +159,23 @@ for file_num in range(starting_value,highest_num+1):
                 else:
                     infer_actions[i-1][0].append('1')
 
-        # weapon switch - this is a bit more reliable than the GSI switch, but gives less info
-        is_switch_weap_ram=False
-        if curr_vars['itemdef'] != prev_vars['itemdef']: 
-            is_switch_weap_ram=True
+        # # weapon switch - this is a bit more reliable than the GSI switch, but gives less info
+        # is_switch_weap_ram=False
+        # if curr_vars['itemdef'] != prev_vars['itemdef']: 
+        #     is_switch_weap_ram=True
 
         # check for scope
-        if curr_vars['obs_fov'] != prev_vars['obs_fov'] and not is_switch_weap_ram:
+        if 'obs_fov' in curr_vars and curr_vars['obs_fov'] != prev_vars['obs_fov'] and not is_switch:
             infer_actions[i-1][4] = 1
-
+        
+        # gsi_ammo is in auto
         # check for fire
         if is_clean_lclick:
             infer_actions[i-0][3] = curr_vars['tp_lclick']
         else:
-            if curr_vars['ammo_active'] < prev_vars['ammo_active'] and not is_switch_weap_ram:
+            if 'ammo_active' in curr_vars and 'gsi_ammo' in curr_vars and  curr_vars['ammo_active'] < prev_vars['ammo_active'] and not is_switch:
+                infer_actions[i-0][3] = 1
+            elif 'gsi_ammo' in curr_vars and 'ammo_active' not in curr_vars:
                 infer_actions[i-0][3] = 1
 
         # check for reload
@@ -172,7 +183,7 @@ for file_num in range(starting_value,highest_num+1):
             if 'r' in curr_vars['tp_wasd']:
                 infer_actions[i-0][0].append('r')
         else:
-            if curr_vars['ammo_active'] > prev_vars['ammo_active'] and not is_switch_weap_ram:
+            if curr_vars['gsi_ammo'] > prev_vars['gsi_ammo'] and not is_switch:
                 # this condition only happens some time delta after actually pressed 'r'
                 # delta varies per weapon
                 # here we use a simple fixed delta, erring on the side of being too early
@@ -196,7 +207,7 @@ for file_num in range(starting_value,highest_num+1):
         if xy_delta > np.pi: # adjust in case passed true north other way
             xy_delta = xy_delta - (2*np.pi)
         const_1 = 0.00096 # change in theta angles for one unit of (my) mouse input, w 250 sensitivity
-        fov_use = curr_vars['obs_fov']
+        fov_use = 0
         if fov_use == 0: fov_use=90
         mouse_x_pred = xy_delta*(90/fov_use)/const_1 
         mouse_y_pred = -zvert_delta*(90/fov_use)/const_1
@@ -265,7 +276,7 @@ for file_num in range(starting_value,highest_num+1):
                 # if crouched, shift has no effect, so don't check
                 if 'ctrl' not in infer_actions[i-0][0]:
                     # moves slowly when scoped with awp, even if not holding shift
-                    if curr_vars['gsi_weap_active']['name'] == 'weapon_awp' and curr_vars['obs_scope']==1:
+                    if curr_vars['gsi_weap_active']['name'] == 'weapon_awp' and 'obs_scope' in curr_vars and curr_vars['obs_scope']==1:
                         if curr_vars['vel_mag'] < 60:
                             infer_actions[i-0][0].append('shift')
                     elif curr_vars['vel_mag'] < 140: # 140 a rough threshold for walking, works with most weapons
@@ -300,7 +311,7 @@ for file_num in range(starting_value,highest_num+1):
                 else:
                     # slowing via natural friction
                     pass
-
+                
     # can ignore this bit if only running for analytics
     if True:
         # do a quick clean up on wasd, since sometimes gaps appear when they should be pushed
@@ -326,8 +337,12 @@ for file_num in range(starting_value,highest_num+1):
                 img_small[74,144,:] = cross_rgb
 
             new_training_data.append([img_small,curr_vars,infer_a])
+        # print(new_training_data)
+        # print(type(new_training_data))
             # new_training_data.append([[],curr_vars,infer_a]) # use this for tracking
-        np.save(file_name,new_training_data)
+        new_training_data_np_array = np.array(new_training_data, dtype=object)
+        # print(new_training_data_np_array)
+        np.save(file_name,new_training_data_np_array)
         print('SAVED', file_name)
 
     print('dead_skipped',dead_skipped)
@@ -342,8 +357,7 @@ for file_num in range(starting_value,highest_num+1):
         # could automate it's deletion here?
 
     summary_stats.append([file_num,dead_skipped,skipped, ram_gsi_disagree_ammo,ram_gsi_disagree_hp,obs_count,mouse_static,vel_static ])
-
-summary_stats_np = np.array(summary_stats)
+    summary_stats_np = np.array(summary_stats)
 
 fig, ax = plt.subplots()
 ax.plot(summary_stats_np[:,0], summary_stats_np[:,1]/1000,label='dead_skipped')
