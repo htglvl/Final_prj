@@ -34,24 +34,24 @@ def filter_keys(data, keys_to_keep):
 
 def find_keys(data, target_keys):
     found = {}
-    special_cases = ['m_fFlags']
-    duplicate_special_cases = {}
-    
-    if isinstance(data, dict):
-        for key, value in data.items():
-            if key in target_keys and key not in found:
-                found[key] = value
-            if isinstance(value, dict):
-                nested_found = find_keys(value, target_keys)
-                for nested_key, nested_value in nested_found.items():
-                    if nested_key not in found:
-                        found[nested_key] = nested_value
-            elif isinstance(value, list):
-                for item in value:
-                    nested_found = find_keys(item, target_keys)
-                    for nested_key, nested_value in nested_found.items():
-                        if nested_key not in found:
-                            found[nested_key] = nested_value
+    key_count = {key: 0 for key in target_keys} # This will keep track of the number of time the key in key_to_find appear (This is the case only for client.dll.json). The special cases is the 
+    def inside_find_key_def(data):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key in target_keys:
+                    key_count[key] += 1
+                    if key == 'm_vecOrigin' and key_count[key] == 1:
+                        found[key] = value
+                    elif key == 'm_fFlags' and key_count[key] == 2:
+                        found[key] = value
+                    elif key not in ['m_vecOrigin', 'm_fFlags'] and key not in found:
+                        found[key] = value
+                if isinstance(value, dict):
+                    inside_find_key_def(value)
+                elif isinstance(value, list):
+                    inside_find_key_def(value)
+                    
+    inside_find_key_def(data=data)
     return found
 
 # stuff for RAM...
