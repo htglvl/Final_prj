@@ -162,19 +162,23 @@ m_pGameSceneNode = 0x308
 offset = 0
 jump = 0x4
 m_vecOrigin = 0x88
+while True:
+    entityList = read_memory(game,(off_clientdll + dwEntityList), "q")
+    # obs_mode = read_memory(game,(localPlayer + m_iHealth),'i')
+    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+    observe_service = read_memory(game,(player + m_pObserverServices),'q')
+    obs_target= read_memory(game,(observe_service + m_hObserverTarget), 'h')
+    print(bin(obs_target))
+    # obs_pointer = read_memory(game,(entityList + obs_target), 'q')
+    # obs_mode = read_memory(game,(obs_target + m_iHealth),'i')
+    # print(obs_mode)
+
 # while True:
 #     localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-#     obs_mode = read_memory(game,(localPlayer + m_iObserverMode),'i')
-
-#     flag = read_memory(game,(localPlayer + m_fFlags), "b")
-#     print(obs_mode)
-
-while True:
-    localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-    crouch = read_memory(game,(localPlayer + m_fFlags), 'h')
-    # gameSceneNode = read_memory(game,(localPlayer + m_pGameSceneNode), 'q')
-    # posx=read_memory(game, (gameSceneNode + m_vecOrigin), 'f')
-    # posy=read_memory(game, (gameSceneNode + m_vecOrigin + 0x4), 'f')
-    # posz=read_memory(game, (gameSceneNode + m_vecOrigin + 0x8), 'f')
-    print(crouch) # jump -1 base 129, crouch +2
+#     crouch = read_memory(game,(localPlayer + m_fFlags), 'h')
+#     # gameSceneNode = read_memory(game,(localPlayer + m_pGameSceneNode), 'q')
+#     # posx=read_memory(game, (gameSceneNode + m_vecOrigin), 'f')
+#     # posy=read_memory(game, (gameSceneNode + m_vecOrigin + 0x4), 'f')
+#     # posz=read_memory(game, (gameSceneNode + m_vecOrigin + 0x8), 'f')
+#     print(crouch) # jump -1 base 129, crouch +2
 

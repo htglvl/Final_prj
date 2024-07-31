@@ -82,7 +82,6 @@ def getlength(type):
     elif type == 'char18':
         return 18
 
-
 def read_memory(game, address, type):
     buffer = (ctypes.c_byte * getlength(type))()
     bytesRead = ctypes.c_ulonglong(0)
