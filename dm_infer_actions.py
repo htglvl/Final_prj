@@ -28,8 +28,8 @@ from config import *
 # (probably want to delete some due to the per file checks)
 
 
-file_name_stub = 'dm_sample_' 
-folder_name = 'G:/2021/csgo_bot_train_july2021/'
+file_name_stub = INFER_ACTION_FILE_NAME
+folder_name = INFER_ACTION_FOLDER_NAME
 
 starting_value = 1
 highest_num = get_highest_num(file_name_stub, folder_name)

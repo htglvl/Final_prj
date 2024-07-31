@@ -235,13 +235,10 @@ while True:
         
     # get player info
     curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
-    
-    print('health obs')
-    print(curr_vars['obs_health'])
     camera_service = read_memory(game, (obs_address + m_pCameraServices), 'q')
     curr_vars['obs_fov'] = read_memory(game,(camera_service + m_iFOVStart),'i') # m_iFOVStart m_iFOV
     # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
-    print(curr_vars['obs_fov'])
+    # print(curr_vars['obs_fov'])
 
     # get player position, x,y,z and height
     gameSceneNode = read_memory(game,(obs_address + m_pGameSceneNode), 'q')
@@ -249,17 +246,12 @@ while True:
     curr_vars['localpos2'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")
     curr_vars['localpos3'] = read_memory(game,(gameSceneNode + m_vecOrigin + 0x8), "f") #+ read_memory(game,(obs_address + 0x10C), "f")
     curr_vars['height'] = read_memory(game,(obs_address + m_fFlags), "h") # from 128 to 131, 129 is normal, 128 is crouch, 131 is jump 130 is jump crouch
+    print(curr_vars['height'])
     # get player velocity, x,y,z
     curr_vars['vel_1'] = read_memory(game,(obs_address + m_vecVelocity), "f") 
     curr_vars['vel_2'] = read_memory(game,(obs_address + m_vecVelocity + 0x4), "f")
     curr_vars['vel_3'] = read_memory(game,(obs_address + m_vecVelocity + 0x8), "f")
     curr_vars['vel_mag'] = np.sqrt(curr_vars['vel_1']**2 + curr_vars['vel_2']**2 )
-
-    print(curr_vars['localpos1'])
-    print(curr_vars['localpos2'])
-    print(curr_vars['localpos3'])
-
-
 
     # zvert_rads is 0 when staring at ground, pi when starting at ceiling
     curr_vars['zvert_rads'] = (-curr_vars['viewangle_vert'] + 90)/360 * (2*np.pi)
@@ -299,7 +291,7 @@ while True:
     else:
         vel_theta_abs = 0
     curr_vars['vel_theta_abs'] = vel_theta_abs
-    print(180 * vel_theta_abs/np.pi)
+    # print(180 * vel_theta_abs/np.pi)
 
     # get weapon info
     # weapon_handle = read_memory(game,obs_address + m_hActiveWeapon, "i")

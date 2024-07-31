@@ -669,7 +669,6 @@ if IS_LOAD_WEIGHTS_AND_MODEL:
     K.set_value(model.optimizer.lr, l_rate)
     print('updated optimiser to saved state')
 
-
 print('starting to train...')
     
 if False:
@@ -682,8 +681,6 @@ if False:
         model.layers[1].trainable=False
         # model.layers[2].trainable=False # this is conv layer!!
         model.compile(loss=custom_loss,optimizer=opt, metrics=[Lclk_acc,no_fire,m_x_acc,m_y_acc, m_x_0,m_y_0])
-
-
 
 # I used a different training routine for different datasets
 if file_name_stub == 'dm_july2021_':
@@ -727,7 +724,6 @@ if file_name_stub == 'aim_july2021_expert_' and IS_LOAD_WEIGHTS_AND_MODEL:
     tp_save_model(model, save_dir, model_name+'72')
     hist = model.fit(training_generator_full,validation_data=validation_generator_full,epochs=12,workers=4,verbose=1,use_multiprocessing=True, max_queue_size=20) 
     tp_save_model(model, save_dir, model_name+'84')
-
 
 if file_name_stub == 'dm_july2021_expert_' and IS_LOAD_WEIGHTS_AND_MODEL:
     if False:

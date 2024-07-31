@@ -171,9 +171,10 @@ m_vecOrigin = 0x88
 
 while True:
     localPlayer = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-    gameSceneNode = read_memory(game,(localPlayer + m_pGameSceneNode), 'q')
-    posx=read_memory(game, (gameSceneNode + m_vecOrigin), 'f')
-    posy=read_memory(game, (gameSceneNode + m_vecOrigin + 0x4), 'f')
-    posz=read_memory(game, (gameSceneNode + m_vecOrigin + 0x8), 'f')
-    print(posx, posy, posz) # jump -1 base 129, crouch +2
+    crouch = read_memory(game,(localPlayer + m_fFlags), 'h')
+    # gameSceneNode = read_memory(game,(localPlayer + m_pGameSceneNode), 'q')
+    # posx=read_memory(game, (gameSceneNode + m_vecOrigin), 'f')
+    # posy=read_memory(game, (gameSceneNode + m_vecOrigin + 0x4), 'f')
+    # posz=read_memory(game, (gameSceneNode + m_vecOrigin + 0x8), 'f')
+    print(crouch) # jump -1 base 129, crouch +2
 

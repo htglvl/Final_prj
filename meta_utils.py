@@ -34,6 +34,9 @@ def filter_keys(data, keys_to_keep):
 
 def find_keys(data, target_keys):
     found = {}
+    special_cases = ['m_fFlags']
+    duplicate_special_cases = {}
+    
     if isinstance(data, dict):
         for key, value in data.items():
             if key in target_keys and key not in found:

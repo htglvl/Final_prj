@@ -35,7 +35,9 @@ key_to_find = [
 
 suffix = 'Hoang' # suffex for data folder when recording data (useful when you have multiple laptop run simultaniously)
 
-
+INFER_ACTION_FOLDER_NAME = "..\\infer_action_data\\"
+INFER_ACTION_FILE_NAME = "dm_sample_"
+INFER_ACTION_SUFFIX = "hoang"
 
 folder_name = "..\\raw_data\\" # where to save the recorded data (we put it outside of project file to avoid git stage)
 # dimensions of image to reduce to
