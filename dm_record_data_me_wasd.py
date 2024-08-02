@@ -297,7 +297,7 @@ while True:
     # weapon_handle = read_memory(game,obs_address + m_hActiveWeapon, "i")
     # weapon_address = read_memory(game,off_clientdll + dwEntityList + ((weapon_handle & 0xFFF)-1)*0x10, "i")
     # curr_vars['itemdef'] = read_memory(game,(weapon_address + m_iItemDefinitionIndex), "i") 
-    # curr_vars['ammo_active'] = read_memory(game,(weapon_address + m_iClip1), "i")
+    # curr_vars['ammo_active'] = read_memory(game,(weapon_address + m_iClip), "i")
 
     curr_vars['tp_wasd'] = []
     if 'T' in keys_pressed:

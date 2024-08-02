@@ -27,9 +27,9 @@ from config import *
 # this effectively duplicates our datasize, so could delete the image in the .npy file 
 
 
-file_name_stub = 'dm_dust_expert_' 
+file_name_stub = 'dm_test_auto_' 
 # folder_name = 'F:/2021/csgo_bot_train_july2021/'
-folder_name = 'test_folder/'
+folder_name = '..\\raw_data\\'
 
 # folder_name = 'F:/01_training_data_hdd/04_march_2021_aim_clean/'
 starting_value = 1
@@ -98,7 +98,11 @@ for file_num in range(starting_value,highest_num+1):
             health = training_data[i-j-1][1]['gsi_health']/100
             # 1.0
 
-            ammo = training_data[i-j-1][1]['ammo_active']/30
+            if training_data[i-j-1][1]['found_active'] == False and training_data[i-j-1][1]['gsi_health'] == 0:
+                #because we dead, no longer have gun
+                ammo = 0
+            else:
+                ammo = training_data[i-j-1][1]['gsi_ammo']/30   
             # 0.0
 
             team_str = training_data[i-j-1][1]['gsi_team']

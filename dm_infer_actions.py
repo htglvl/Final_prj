@@ -39,7 +39,7 @@ summary_stats=[]
 
 # for each file of interest
 for file_num in range(starting_value,highest_num+1):
-    file_name = folder_name+file_name_stub + str(file_num) + '.pkl'
+    file_name = folder_name+file_name_stub + str(file_num) +'.pkl'
 
     # try to find file
     is_found=False
@@ -342,7 +342,7 @@ for file_num in range(starting_value,highest_num+1):
             # new_training_data.append([[],curr_vars,infer_a]) # use this for tracking
         new_training_data_np_array = np.array(new_training_data, dtype=object)
         # print(new_training_data_np_array)
-        np.save(file_name,new_training_data_np_array)
+        np.save(file_name[:-4],new_training_data_np_array) # we discard 4 last character as it is with .pkl, we want to replace it as .npy 
         print('SAVED', file_name)
 
     print('dead_skipped',dead_skipped)
@@ -358,6 +358,7 @@ for file_num in range(starting_value,highest_num+1):
 
     summary_stats.append([file_num,dead_skipped,skipped, ram_gsi_disagree_ammo,ram_gsi_disagree_hp,obs_count,mouse_static,vel_static ])
     summary_stats_np = np.array(summary_stats)
+    print('ran?')
 
 fig, ax = plt.subplots()
 ax.plot(summary_stats_np[:,0], summary_stats_np[:,1]/1000,label='dead_skipped')

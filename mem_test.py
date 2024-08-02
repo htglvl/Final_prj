@@ -162,13 +162,19 @@ m_pGameSceneNode = 0x308
 offset = 0
 jump = 0x4
 m_vecOrigin = 0x88
+m_pWeaponServices = 0x10F8
+m_hActiveWeapon = 0x58
+m_iClip1 = 0x15C0
 while True:
-    entityList = read_memory(game,(off_clientdll + dwEntityList), "q")
+    # entityList = read_memory(game,(off_clientdll + dwEntityList), "q")
     # obs_mode = read_memory(game,(localPlayer + m_iHealth),'i')
     player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-    observe_service = read_memory(game,(player + m_pObserverServices),'q')
-    obs_target= read_memory(game,(observe_service + m_hObserverTarget), 'h')
-    print(bin(obs_target))
+    weapon_service = read_memory(game,(player + m_pWeaponServices),'q')
+    active_weapon = read_memory(game,(weapon_service + m_hActiveWeapon),'q')
+    clip = read_memory(game, (weapon_service + m_iClip1), 'i')
+
+    # obs_target= read_memory(game,(observe_service + m_hObserverTarget), 'h')
+    print(clip)
     # obs_pointer = read_memory(game,(entityList + obs_target), 'q')
     # obs_mode = read_memory(game,(obs_target + m_iHealth),'i')
     # print(obs_mode)
