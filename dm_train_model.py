@@ -1,5 +1,6 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="0" # single GPU
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 # os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3" # use multiple GPUs
 
 import tensorflow as tf
@@ -25,21 +26,21 @@ import tensorflow.keras.backend as K
 from tensorflow.keras.applications import EfficientNetB0
 
 from config import *
-
+TF_ENABLE_ONEDNN_OPTS=0
 # inputs
 batch_size = 1 # this is total batchsize using all GPUs, so make divisible by num_gpus!
 l_rate = 0.0001
 
 # training data location
-file_name_stub = 'dm_july2021_expert_' # dm_july2021_ aim_july2021_expert_ dm_july2021_expert_
+file_name_stub = 'hdf5_dm_test_auto_' # dm_july2021_ aim_july2021_expert_ dm_july2021_expert_
 # file_name_stub = 'dm_6nov_aim_' 
-folder_name = '/mfs/TimPearce/01_csgo/01_trainingdata/' 
+folder_name = '..\\raw_data\\' 
 starting_num = 1 # lowest file name to use in training
 highest_num = 30 # highest file name to use in training 4000, 5500, 190, 45, 10
 
 # whether to save model if training and where
-model_name = 'ak47_m41a_55k_sub_drop_'
-save_dir = '/mfs/TimPearce/01_csgo/02_savedmodels'
+model_name = 'all_55k_sub_drop_'
+save_dir = '..\\save_model\\'
 SAVE_MODEL = True
 
 # whether to resume training from a previous model
@@ -49,7 +50,7 @@ weights_name = 'test_model_1'
 # which subselection of dataset to train on
 IS_SUBSELECT = False
 SUB_PROB = 0.4
-SUB_TYPE = 'ak' # ak or akm4 or all
+SUB_TYPE = 'all' # ak or akm4 or all
 OVERSAMPLE_LOWFREQ_REGION=False
 
 # where are the metadata .npy files? only needed if subselecting
@@ -682,6 +683,8 @@ if False:
         # model.layers[2].trainable=False # this is conv layer!!
         model.compile(loss=custom_loss,optimizer=opt, metrics=[Lclk_acc,no_fire,m_x_acc,m_y_acc, m_x_0,m_y_0])
 
+if file_name_stub == 'hdf5_dm_test_auto_': #testing, attention please
+    hist = model.fit(training_generator_full, validation_data=validation_generator_full,epochs=100,workers=4,verbose=1,use_multiprocessing=True)
 # I used a different training routine for different datasets
 if file_name_stub == 'dm_july2021_':
     for iter_letter in ['a','b','c','d','e','f','g','h','i','j','k']:

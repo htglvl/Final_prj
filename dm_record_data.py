@@ -227,14 +227,24 @@ while True:
 
     try:
         cur_x, cur_y, cur_z = server.data_all['player']['position'].split(',')
-    except:
-        print("can't find cur_x, cur_y, cur_z, set to 0")
-        continue
-    cur_timestamp = time.time()
 
+    except:
+        print("can't find cur_x, cur_y, cur_z, set to previous")
+        cur_x = old_x
+        cur_y = old_y
+        cur_z = old_z
+        continue
     cur_x = float(cur_x)
     cur_y = float(cur_y.lstrip())
     cur_z = float(cur_z.rstrip())
+    cur_timestamp = time.time()
+
+
+    curr_vars['localpos1'] = cur_x
+    curr_vars['localpos2'] = cur_y
+    curr_vars['localpos3'] = cur_z
+    print(cur_x, cur_y, cur_z)
+
 
     try:
         old_x, old_y, old_z = server.data_all['previously']['player']['position'].split(',')
@@ -244,6 +254,7 @@ while True:
     old_x = float(old_x)
     old_y = float(old_y.lstrip())
     old_z = float(old_z.rstrip())
+    
 
     if cur_timestamp-old_timestamp == 0: # edge case where previously coord set to 0
         vel_x = 0

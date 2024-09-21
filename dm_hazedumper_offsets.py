@@ -1,10 +1,9 @@
-timestamp = 1722445824
+timestamp = 1726937623
 m_iFOVStart = 532
 m_vecOrigin = 136
 m_hObserverTarget = 68
 m_iObserverMode = 64
 m_hActiveWeapon = 88
-m_fFlags = 972
 m_fFlags = 972
 m_iHealth = 804
 m_pGameSceneNode = 776
