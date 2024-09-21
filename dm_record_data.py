@@ -287,7 +287,6 @@ while True:
     # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
     # curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV
     # curr_vars['obs_scope'] = read_memory(game,(obs_address + m_bIsScoped),'b')
-
     # get player position, x,y,z and height
     # curr_vars['localpos1'] = read_memory(game,(obs_address + m_vecOrigin), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x104), "f")
     # curr_vars['localpos2'] = read_memory(game,(obs_address + m_vecOrigin + 0x4), "f") #+ read_memory(game,(vecorigin + m_vecViewOffset + 0x108), "f")

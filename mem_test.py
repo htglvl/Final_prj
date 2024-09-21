@@ -138,43 +138,17 @@ CloseHandle = windll.kernel32.CloseHandle
 PROCESS_ALL_ACCESS = 0x1F0FFF
 game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
 
-
+dwViewMatrix = 27397360
 ReadProcessMemory = windll.kernel32.ReadProcessMemory
 
-m_fFlags = 972
-dwLocalPlayerPawn = 0x1824A18
-dwLocalPlayerController = 0x1A0E9C8
-m_iHealth = 0x324
-m_pObserverServices = 0x1110
-m_iObserverMode = 0x40
-m_hObserverTarget = 0x44
-m_pObserverServices = 0x1110
-m_fFlags = 0x3CC
-dwEntityList = 0x19BEED0
-m_szLastPlaceName = 0x14A4
-m_vecVelocity = 992
-m_iHealth = 0x324
-m_pCameraServices = 0x1130
-m_iFOV = 0x210
-m_bIsScoped = 0x22A0
-m_fFlags = 0x3CC
-m_pGameSceneNode = 0x308
-offset = 0
-jump = 0x4
-m_vecOrigin = 0x88
-m_pWeaponServices = 0x10F8
-m_hActiveWeapon = 0x58
-m_iClip1 = 0x15C0
 while True:
     # entityList = read_memory(game,(off_clientdll + dwEntityList), "q")
     # obs_mode = read_memory(game,(localPlayer + m_iHealth),'i')
     player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-    weapon_service = read_memory(game,(player + m_pWeaponServices),'q')
-    active_weapon = read_memory(game,(weapon_service + m_hActiveWeapon),'q')
-    clip = read_memory(game, (weapon_service + m_iClip1), 'i')
-
+    view_matrix = read_memory(game,(off_clientdll + dwViewMatrix))
+    
+    print(view_matrix)
     # obs_target= read_memory(game,(observe_service + m_hObserverTarget), 'h')
-    print(clip)
     # obs_pointer = read_memory(game,(entityList + obs_target), 'q')
     # obs_mode = read_memory(game,(obs_target + m_iHealth),'i')
     # print(obs_mode)
