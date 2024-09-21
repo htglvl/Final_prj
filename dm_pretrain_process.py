@@ -164,24 +164,34 @@ for file_num in range(starting_value,highest_num+1):
     new_training_data = []
     for i, data in enumerate(training_data):
         img_small = data[0]
+        # 3D image
+
         curr_vars = data[1]
+        # {'obs_mode': 0, 'gsi_team': 'T', 'gsi_health': 100, 'gsi_kills': 21, 'gsi_deaths': 4, 'gsi_weapons': {'weapon_0': {'name': 'weapon_knife_t', 'paintkit': 'default', 'type': 'Knife', 'state': 'holstered'}, 'weapon_1': {'name': 'weapon_glock', 'paintkit': 'default', 'type': 'Pistol', 'ammo_clip': 20, 'ammo_clip_max': 20, 'ammo_reserve': 120, 'state': 'holstered'}, 'weapon_2': {'name': 'weapon_ak47', 'paintkit': 'default', 'type': 'Rifle', 'ammo_clip': 21, 'ammo_clip_max': 30, 'ammo_reserve': 90, 'state': 'active'}, 'weapon_3': {'name': 'weapon_healthshot', 'paintkit': 'default', 'type': 'StackableItem', 'ammo_reserve': 1, 'state': 'holstered'}}, 'found_active': True, 'gsi_weap_active': {'name': 'weapon_ak47', 'paintkit': 'default', 'type': 'Rifle', 'ammo_clip': 21, 'ammo_clip_max': 30, 'ammo_reserve': 90, 'state': 'active'}, 'gsi_ammo': 21, 'obs_health': 100, 'obs_fov': 90, 'obs_scope': 0, 'localpos1': 1467.789794921875, 'localpos2': 2322.2119140625, 'localpos3': 4.584102630615234, 'height': 64.06256103515625, 'vel_1': 75.76022338867188, 'vel_2': -155.86288452148438, 'vel_3': 0.0, 'vel_mag': np.float64(173.29988522575263), 'viewangle_vert': 1.3213272094726562, 'viewangle_xy': -101.09760284423828, 'zvert_rads': 1.54773481649341, 'xy_rad': 1.764486035505542, 'vel_theta_abs': np.float64(1.1183549447382357), 'itemdef': 0, 'ammo_active': 0, 'tp_wasd': ['w', 'a'], 'tp_lclick': 0, 'vel_theta_rel': np.float64(5.645923874422788)}
+        
         infer_a = data[2]
+        # [['w', 'a'], 9.239227094280192, -3.079778486194072, 0, 0]
+
         y_train_i = y_train_full[i]
+        # [1. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0.
+        #  0. 0. 0. 1. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 0. 1. 0. 0. 0. 0. 0. 0.
+        #  0. 0. 0.]
+
         x_aux_i = x_train_aux[i]
+        # [ 1.     1.     0.     0.     0.     0.     0.     0.     0.     0.
+        #   0.     0.     0.     0.004 -0.     1.     0.     0.     1.     1.
+        #   0.     0.     0.     0.     0.     0.     0.     0.     0.     0.
+        #   0.     0.01   0.02   1.     0.     0.     1.     1.     0.     0.
+        #   0.     0.     0.     0.     0.     0.     0.     0.     0.    -0.002
+        #   0.02   1.     0.     0.   ]
+
         helper_arr_i = helper_arr[i]
-        # print(infer_a)
-        # print('------')
-        # print(np.shape(img_small))
-        # print(np.shape(curr_vars))
-        # print(np.shape(infer_a))
-        # print(np.shape(y_train_i))
-        # print(np.shape(x_aux_i))
-        # print(np.shape(helper_arr_i))
-        # print('-------')
-        # print(np.shape([img_small,curr_vars,infer_a,y_train_i,x_aux_i,helper_arr_i]))
+        # [0. 0.]
+        
         new_training_data.append([img_small,curr_vars,infer_a,y_train_i,x_aux_i,helper_arr_i])
-        if i == 58:
-            print([img_small,curr_vars,infer_a,y_train_i,x_aux_i,helper_arr_i])
+        # if i == 58:
+        #     print([img_small,curr_vars,infer_a,y_train_i,x_aux_i,helper_arr_i])
+        
         # new_training_data.append([[],curr_vars,infer_a,y_train_i,x_aux_i,helper_arr_i]) # could delete image here
 
         h5file.create_dataset('frame_'+str(i)+'_x', data=img_small)
