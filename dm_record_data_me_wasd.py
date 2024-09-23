@@ -352,7 +352,7 @@ while True:
 
         if len(training_data) >= 1000:
             # save about every minute
-            file_name = f'{folder_name}+{save_name}+{starting_value}+{suffix}.pkl'
+            file_name = f'{folder_name}{save_name}{starting_value}_{suffix}.pkl'
             with open(file_name, 'wb') as file:
                 pickle.dump(training_data, file)
 
