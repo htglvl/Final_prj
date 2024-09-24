@@ -138,16 +138,35 @@ CloseHandle = windll.kernel32.CloseHandle
 PROCESS_ALL_ACCESS = 0x1F0FFF
 game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
 
-dwViewMatrix = 27397360
 ReadProcessMemory = windll.kernel32.ReadProcessMemory
 
+dwViewAngles = 27023704
+dwViewMatrix = 26961136
+m_iszPlayerName = 0x640 #char[128]
+m_steamID = 0x6C8 # uint64
+dwViewRender = 26963072
+old_viewmatrix = 0
 while True:
     # entityList = read_memory(game,(off_clientdll + dwEntityList), "q")
     # obs_mode = read_memory(game,(localPlayer + m_iHealth),'i')
-    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
-    view_matrix = read_memory(game,(off_clientdll + dwViewMatrix))
-    
-    print(view_matrix)
+    # player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+    view_matrix = read_memory(game,(off_clientdll + dwViewMatrix), 'viewmatrix')
+    if view_matrix != old_viewmatrix:
+        print('begin view matrix')
+        for i in range(4):
+            print(view_matrix[i*4:(i+1)*4])
+        print('end view matrix')
+    LINE_UP = '\033[1A'
+    LINE_CLEAR = '\x1b[2K'
+    print(LINE_UP, end=LINE_CLEAR)
+    print(LINE_UP, end=LINE_CLEAR)
+    print(LINE_UP, end=LINE_CLEAR)
+    print(LINE_UP, end=LINE_CLEAR)
+    print(LINE_UP, end=LINE_CLEAR)
+    print(LINE_UP, end=LINE_CLEAR)
+
+    old_viewmatrix = view_matrix
+    # print(view_matrix)
     # obs_target= read_memory(game,(observe_service + m_hObserverTarget), 'h')
     # obs_pointer = read_memory(game,(entityList + obs_target), 'q')
     # obs_mode = read_memory(game,(obs_target + m_iHealth),'i')
