@@ -33,7 +33,7 @@ key_to_find = [
 # Special key in toml_data
 
 
-suffix = 'Hoang' # suffex for data folder when recording data (useful when you have multiple laptop run simultaniously)
+suffix = 'Tuan' # suffex for data folder when recording data (useful when you have multiple laptop run simultaniously)
 
 INFER_ACTION_FOLDER_NAME = "..\\raw_data\\"
 INFER_ACTION_FILE_NAME = "dm_test_auto_"
