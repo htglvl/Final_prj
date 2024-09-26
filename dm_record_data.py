@@ -208,6 +208,8 @@ while True:
     curr_vars['gsi_kills'] = server.data_all['player']['match_stats']['kills']
     curr_vars['gsi_deaths'] = server.data_all['player']['match_stats']['deaths']
     curr_vars['gsi_weapons'] = server.data_all['player']['weapons']
+    
+
 
     # get GSI active weapon
     curr_vars['found_active']=False
@@ -282,7 +284,22 @@ while True:
     # else: # else if not observing, just use me as player
     #     obs_address = player
     #     obs_id=None
-        
+    gsi_steamid = server.data_all['player']['state']['health']
+    print('gsi_steamid',gsi_steamid)
+    m_steamID = 0x6C8
+    m_hController = 0x128C
+    entity = read_memory(game,off_clientdll + dwEntityList + (0x10 * i), "q")
+    list_entry = entity[(i & 0x7FFF) >> 9]
+    
+    for i in range(1,64):
+        health = read_memory(game,entity +m_iHealth, "i")
+        # entity_controller = read_memory(game, entity + m_hController, "q")
+        # obs_steamid = read_memory(game, entity_controller + m_steamID, "q")
+        print('health', health)
+        # if gsi_steamid == obs_steamid:
+        #     curr_vars['height'] = read_memory(game,(entity + m_fFlags), "h")
+        #     print('found')
+        #     print(curr_vars['height'])
     # get player info
     # curr_vars['obs_health'] = read_memory(game,(obs_address + m_iHealth), "i")
     # curr_vars['obs_fov'] = read_memory(game,(obs_address + m_iFOVStart),'i') # m_iFOVStart m_iFOV

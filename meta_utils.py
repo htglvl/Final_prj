@@ -81,14 +81,18 @@ def getlength(type):
         return 8
     elif type == 'char18':
         return 18
+    elif type == 'viewmatrix':
+        return 64
 
 def read_memory(game, address, type):
     buffer = (ctypes.c_byte * getlength(type))()
     bytesRead = ctypes.c_ulonglong(0)
     readlength = getlength(type)
     ReadProcessMemory(game, ctypes.c_void_p(address), buffer, readlength, byref(bytesRead))
-
-    if type == 'char18':
+    
+    if type == 'viewmatrix':
+        return ctypes.cast(buffer, ctypes.POINTER(ctypes.c_float * 16)).contents
+    elif type == 'char18':
         # Convert buffer to bytes and decode as string
         return bytes(buffer).decode('utf-8')
     else:
