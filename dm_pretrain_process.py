@@ -105,13 +105,17 @@ for file_num in range(starting_value,highest_num+1):
                 ammo = training_data[i-j-1][1]['gsi_ammo']/30   
             # 0.0
 
-            team_str = training_data[i-j-1][1]['gsi_team']
-            # T
+            # replaced team_str with armor stat
+            # team_str = training_data[i-j-1][1]['gsi_team']
+            # # T
 
-            if team_str=='CT':
-                team=1
-            else:
-                team=0
+            # if team_str=='CT':
+            #     team=1
+            # else:
+            #     team=0
+
+            armor = training_data[i-j-1][1]['gsi_armor']/100 # no clue why did the author normalize these values 
+
             x_aux_i[int(j*aux_input_length+(n_keys+n_clicks)+2):int(j*aux_input_length+(n_keys+n_clicks)+2+1)] = health
             # [ 1.     1.     0.     0.     0.     0.     0.     0.     0.     0.
             #   0.     0.     0.     0.004 -0.     1.     0.     0.     0.     0.
@@ -128,7 +132,7 @@ for file_num in range(starting_value,highest_num+1):
             #   0.     0.     0.     0.     0.     0.     0.     0.     0.     0.
             #   0.     0.     0.     0.   ]
 
-            x_aux_i[int(j*aux_input_length+(n_keys+n_clicks)+2+1+1):int(j*aux_input_length+(n_keys+n_clicks)+2+1+1+1)] = team
+            x_aux_i[int(j*aux_input_length+(n_keys+n_clicks)+2+1+1):int(j*aux_input_length+(n_keys+n_clicks)+2+1+1+1)] = armor
             # [ 1.     1.     0.     0.     0.     0.     0.     0.     0.     0.
             #   0.     0.     0.     0.004 -0.     1.     0.     0.     0.     0.
             #   0.     0.     0.     0.     0.     0.     0.     0.     0.     0.
