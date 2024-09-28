@@ -205,7 +205,6 @@ while True:
     # sort through GSI data package and get useful info
     curr_vars['gsi_team'] = server.data_all['player']['team']
     curr_vars['gsi_health'] = server.data_all['player']['state']['health']
-    curr_vars['gsi_armor'] = server.data_all['player']['state']['armor']
     curr_vars['gsi_kills'] = server.data_all['player']['match_stats']['kills']
     curr_vars['gsi_deaths'] = server.data_all['player']['match_stats']['deaths']
     curr_vars['gsi_weapons'] = server.data_all['player']['weapons']
