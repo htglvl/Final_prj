@@ -209,7 +209,7 @@ while True:
     curr_vars['gsi_kills'] = server.data_all['player']['match_stats']['kills']
     curr_vars['gsi_deaths'] = server.data_all['player']['match_stats']['deaths']
     curr_vars['gsi_weapons'] = server.data_all['player']['weapons']
-    
+    curr_vars['gsi_armor'] = server.data_all['player']['state']['armor']
 
 
     # get GSI active weapon
