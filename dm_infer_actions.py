@@ -143,9 +143,16 @@ for file_num in range(starting_value,highest_num+1):
                 infer_actions[i-0][0].append('space')
 
         # check for crouch
-        if 'height' in curr_vars and curr_vars['height'] == 128: # a weird glitch where at times always zero
-            if i>1: 
-                infer_actions[i-2][0].append('ctrl')
+        if 'height' in curr_vars:
+            if curr_vars['height'] >= 128 and curr_vars['height'] <=131: # from 128 to 131 # sort to check for data me wasd vs data, the two crouch checkings are different
+                if curr_vars['height'] == 128: # a weird glitch where at times always zero
+                    if i>1: 
+                        infer_actions[i-2][0].append('ctrl')
+            elif  curr_vars['height'] > 40 and curr_vars['height']<70: # a weird glitch where at times always zero # this returns z height of player, goes between 64.06 and 46.04
+                if  curr_vars['height'] < 50 and curr_vars['height']>0.1: # a weird glitch where at times always zero
+                    if i>1: 
+                        infer_actions[i-2][0].append('ctrl')
+            
 
         # check for weapon switch
         is_switch=False

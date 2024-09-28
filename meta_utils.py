@@ -79,6 +79,8 @@ def getlength(type):
         return 2 
     elif type == 'q':
         return 8
+    elif type == 't':
+        return 10
     elif type == 'char18':
         return 18
     elif type == 'viewmatrix':

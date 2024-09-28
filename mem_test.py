@@ -62,45 +62,9 @@ special_key = ['dwClientState', 'dwClientState_GetLocalPlayer', 'dwClientState_S
 key_to_keep = set(key_to_find) | set(special_key)
 
 # Delete all other key that are not in read_memory
-
-if False:
-    print('updating offsets')
-    offsets_old = requests.get('https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.toml').text
-    toml_data = toml.loads(offsets_old)
-    # print(';;;;;;;')
-    # print(offsets_old)
-    # print('-------')
-    offsets1 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/offsets.yaml').text
-    offsets2 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/client.dll.yaml').text
-    offsets3 = requests.get('https://raw.githubusercontent.com/sezzyaep/CS2-OFFSETS/main/engine2.dll.yaml').text
-    yaml_data1 = yaml.safe_load(offsets1)
-    yaml_data2 = yaml.safe_load(offsets2)
-    yaml_data3 = yaml.safe_load(offsets3)
-    file_contents = {**yaml_data1, **yaml_data2, **yaml_data3}
-    foundthings = find_keys(file_contents, key_to_find)
-    for key, value in foundthings.items():
-        if key == "dwLocalPlayerController":
-            toml_data['signatures']['dwLocalPlayer'] = value
-        if key == "dwViewAngles":
-            toml_data['signatures']['dwClientState_ViewAngles'] = value
-        if key in toml_data['signatures']:
-            toml_data['signatures'][key] = value
-        if key in toml_data['netvars']:
-            toml_data['netvars'][key] = value
-        if key == "dwNetworkGameClient":
-            toml_data['signatures']['dwClientState'] = value
-        if key == 'dwNetworkGameClient_signOnState':
-            toml_data['signatures']['dwClientState_State'] = value
-        if key == 'dwNetworkGameClient_getLocalPlayer':
-            toml_data['signatures']['dwClientState_GetLocalPlayer'] = value
-    toml_data = {
-        'timestamp': toml_data['timestamp'],
-        'signatures': filter_keys(toml_data['signatures'], key_to_keep),
-        'netvars': filter_keys(toml_data['netvars'], key_to_keep)
-    }
-    del requests
-    update_offsets(toml.dumps(toml_data))
-
+m_hObserverTarget = 0x44
+m_iObserverLastMode = 0x48
+m_iOldHealth = 0xA74
 # from dm_hazedumper_offsets import *
 
 #find the process aka the
@@ -138,5 +102,13 @@ CloseHandle = windll.kernel32.CloseHandle
 PROCESS_ALL_ACCESS = 0x1F0FFF
 game = windll.kernel32.OpenProcess(PROCESS_ALL_ACCESS, 0, pid[1])
 
-ReadProcessMemory = windll.kernel32.ReadProcessMemory
-
+print('begin')
+while True:
+    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+    observe_service = read_memory(game,(player + m_pObserverServices),'q')
+    obs_target = read_memory(game,(observe_service + m_hObserverTarget), 'i')
+    obs_id = (obs_target & 0xFFF)
+    obs_address = read_memory(game,off_clientdll + dwEntityList + (obs_id-1)*0x10, "q")
+    obs_health = read_memory(game, (player + m_vecViewOffset+ 0x8), 'f')
+    print(obs_health)
+print('end')

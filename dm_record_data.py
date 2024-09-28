@@ -55,7 +55,7 @@ from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_auto_' # stub name of file to save as
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
-starting_value = 1
+starting_value = 198
 
 is_show_img = True
 
@@ -205,6 +205,7 @@ while True:
     # sort through GSI data package and get useful info
     curr_vars['gsi_team'] = server.data_all['player']['team']
     curr_vars['gsi_health'] = server.data_all['player']['state']['health']
+    curr_vars['gsi_armor'] = server.data_all['player']['state']['armor']
     curr_vars['gsi_kills'] = server.data_all['player']['match_stats']['kills']
     curr_vars['gsi_deaths'] = server.data_all['player']['match_stats']['deaths']
     curr_vars['gsi_weapons'] = server.data_all['player']['weapons']
@@ -274,7 +275,8 @@ while True:
     curr_vars['vel_2'] = vel_x*np.sin(np.deg2rad(-curr_vars['viewangle_xy'])) +vel_y * np.cos(-np.deg2rad(curr_vars['viewangle_xy']))
     curr_vars['vel_mag'] = np.sqrt(vel_x**2 + vel_y**2)
     old_timestamp = cur_timestamp
-
+    player = read_memory(game,(off_clientdll + dwLocalPlayerPawn), "q")
+    curr_vars['height'] = read_memory(game, (player + m_vecViewOffset+ 0x8), 'f') #this returns z height of player, goes between 64.06 and 46.04
 
     # --- get RAM info
     # if curr_vars['obs_mode']==4: # figure out which player I'm observing
@@ -284,18 +286,12 @@ while True:
     # else: # else if not observing, just use me as player
     #     obs_address = player
     #     obs_id=None
-    gsi_steamid = server.data_all['player']['state']['health']
-    print('gsi_steamid',gsi_steamid)
-    m_steamID = 0x6C8
-    m_hController = 0x128C
-    entity = read_memory(game,off_clientdll + dwEntityList + (0x10 * i), "q")
-    list_entry = entity[(i & 0x7FFF) >> 9]
-    
-    for i in range(1,64):
-        health = read_memory(game,entity +m_iHealth, "i")
-        # entity_controller = read_memory(game, entity + m_hController, "q")
-        # obs_steamid = read_memory(game, entity_controller + m_steamID, "q")
-        print('health', health)
+    # gsi_steamid = server.data_all['player']['state']['health']
+    # print('gsi_steamid',gsi_steamid)
+    # m_steamID = 0x6C8
+    # m_hController = 0x128C
+    # entity = read_memory(game,off_clientdll + dwEntityList + (0x10 * i), "q")
+    # list_entry = entity[(i & 0x7FFF) >> 9]
         # if gsi_steamid == obs_steamid:
         #     curr_vars['height'] = read_memory(game,(entity + m_fFlags), "h")
         #     print('found')

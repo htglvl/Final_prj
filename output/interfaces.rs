@@ -1,5 +1,5 @@
 // Generated using https://github.com/a2x/cs2-dumper
-// 2024-09-21 17:29:30.951772400 UTC
+// 2024-09-28 15:33:14.039937700 UTC
 
 #![allow(non_upper_case_globals, unused)]
 
@@ -184,7 +184,7 @@ pub mod cs2_dumper {
         }
         // Module: steamclient64.dll
         pub mod steamclient64_dll {
-            pub const CLIENTENGINE_INTERFACE_VERSION005: usize = 0xFFFFFFFF8BB1A84A;
+            pub const CLIENTENGINE_INTERFACE_VERSION005: usize = 0xFFFFFFFF8BB1ADBA;
             pub const IVALIDATE001: usize = 0x15636E8;
             pub const SteamClient006: usize = 0x1560E90;
             pub const SteamClient007: usize = 0x1560E98;
@@ -202,7 +202,7 @@ pub mod cs2_dumper {
             pub const SteamClient019: usize = 0x1560EF8;
             pub const SteamClient020: usize = 0x1560F00;
             pub const SteamClient021: usize = 0x1560F08;
-            pub const p2pvoice002: usize = 0x14E459F;
+            pub const p2pvoice002: usize = 0x14E45DF;
             pub const p2pvoicesingleton002: usize = 0x153C0E0;
         }
         // Module: tier0.dll
