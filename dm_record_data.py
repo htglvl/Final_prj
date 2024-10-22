@@ -55,8 +55,7 @@ from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_auto_' # stub name of file to save as
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
-starting_value = 198
-
+starting_value = 1730
 is_show_img = True
 
 # now find the requried process and where two modules (dll files) are in RAM
@@ -108,8 +107,8 @@ old_timestamp = cur_timestamp
 while True:
     loop_start_time = time.time()
     n_loops += 1
-    
-
+    if starting_value == 1801:
+        break
     print(n_loops)
     keys_pressed = key_check()
     print(keys_pressed)

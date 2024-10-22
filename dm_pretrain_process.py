@@ -32,7 +32,7 @@ file_name_stub = 'dm_test_auto_'
 folder_name = '..\\raw_data\\'
 
 # folder_name = 'F:/01_training_data_hdd/04_march_2021_aim_clean/'
-starting_value = 1
+starting_value = 1730
 highest_num = get_highest_num(file_name_stub, folder_name)
 # highest_num = 2100
 

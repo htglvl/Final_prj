@@ -31,15 +31,15 @@ from config import *
 
 file_name_stub = INFER_ACTION_FILE_NAME
 folder_name = INFER_ACTION_FOLDER_NAME
-
-starting_value = 1
+folder_suffix = INFER_ACTION_SUFFIX
+starting_value = 422
 highest_num = get_highest_num(file_name_stub, folder_name)
 # highest_num = 4020
 summary_stats=[]
 
 # for each file of interest
 for file_num in range(starting_value,highest_num+1):
-    file_name = folder_name+file_name_stub + str(file_num) +'.pkl'
+    file_name = folder_name+file_name_stub + str(file_num) + '.pkl'
 
     # try to find file
     is_found=False

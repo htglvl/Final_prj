@@ -37,7 +37,7 @@ suffix = 'Tuan' # suffex for data folder when recording data (useful when you ha
 
 INFER_ACTION_FOLDER_NAME = "..\\raw_data\\"
 INFER_ACTION_FILE_NAME = "dm_test_auto_"
-INFER_ACTION_SUFFIX = "Hoang"
+INFER_ACTION_SUFFIX = "_Hoang"
 
 folder_name = "..\\raw_data\\" # where to save the recorded data (we put it outside of project file to avoid git stage)
 # dimensions of image to reduce to
