@@ -32,7 +32,7 @@ from config import *
 file_name_stub = INFER_ACTION_FILE_NAME
 folder_name = INFER_ACTION_FOLDER_NAME
 
-starting_value = 1
+starting_value = 305
 highest_num = get_highest_num(file_name_stub, folder_name)
 # highest_num = 4020
 summary_stats=[]
