@@ -55,7 +55,7 @@ from dm_hazedumper_offsets import *
 
 save_name = 'dm_test_auto_' # stub name of file to save as
 # starting_value = get_highest_num(save_name, folder_name)+1 # set to one larger than whatever found so far
-starting_value = 198
+starting_value = 1165
 
 is_show_img = True
 

@@ -35,7 +35,7 @@ key_to_find = [
 
 suffix = 'Tuan' # suffex for data folder when recording data (useful when you have multiple laptop run simultaniously)
 
-INFER_ACTION_FOLDER_NAME = "..\\raw_data\\"
+INFER_ACTION_FOLDER_NAME = "E:\\raw_data_npy\\"
 INFER_ACTION_FILE_NAME = "dm_test_auto_"
 INFER_ACTION_SUFFIX = "Hoang"
 
