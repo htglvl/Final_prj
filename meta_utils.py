@@ -14,13 +14,23 @@ import http.server
 import socketserver
 import urllib.request
 import multiprocessing
-
+import cv2
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import sys
 import json
 
 ReadProcessMemory = windll.kernel32.ReadProcessMemory
 WriteProcessMemory = windll.kernel32.WriteProcessMemory
+
+# Resize image 
+def rere_size_img(img_arr):
+    '''
+    input an image array then output the cropped then resized to 150*412 image (use cv2 cuz faster than PIL)
+    '''
+    cropped_img = img_arr[100:398, : ]
+    resized_img = cv2.resize(cropped_img,(412,150), interpolation=cv2.INTER_NEAREST)
+
+    return resized_img
 
 # This return a dict so that other def can work
 def read_json_file(json_file_path):
