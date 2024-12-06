@@ -52,12 +52,13 @@ class HardwareInput(ctypes.Structure):
                 ("wParamL", ctypes.c_short),
                 ("wParamH", ctypes.c_ushort)]
 class MouseInput(ctypes.Structure):
-    _fields_ = [("dx", ctypes.c_long),
-                ("dy", ctypes.c_long),
-                ("mouseData", ctypes.c_ulong),
-                ("dwFlags", ctypes.c_ulong),
-                ("time", ctypes.c_ulong),
-                ("dwExtraInfo", PUL)]
+    _fields_ = [
+        ("dx", ctypes.c_long),
+        ("dy", ctypes.c_long),
+        ("mouseData", ctypes.c_ulong),
+        ("dwFlags", ctypes.c_ulong),
+        ("time", ctypes.c_ulong),
+        ("dwExtraInfo", PUL)]
 class Input_I(ctypes.Union):
     _fields_ = [("ki", KeyBdInput),
                 ("mi", MouseInput),
@@ -67,13 +68,17 @@ class Input(ctypes.Structure):
                 ("ii", Input_I)]
 
 def set_pos(x, y, Wd, Hd):
+    print(x, y)
+    print('after set pos')
     # raw input off, mouse sensitivity 2.50, res 800x600, box =400
-    x = 1 + int(x * 65536./Wd)
-    y = 1 + int(y * 65536./Hd)
-
+    # x = 1 + int(x * 65536./Wd)
+    # y = 1 + int(y * 65536./Hd)
+    print(x, y)
+    print("after math")
     extra = ctypes.c_ulong(0)
     ii_ = Input_I()
-    ii_.mi = MouseInput(x, y, 0, (0x0001 | 0x8000), 0, ctypes.pointer(extra))
+    # ii_.mi = MouseInput(x, y, 0, (0x0001 | 0x8000), 0, ctypes.pointer(extra))
+    ii_.mi = MouseInput(x, y, 0, 0x0001 , 0, ctypes.pointer(extra))
     command=Input(ctypes.c_ulong(0), ii_)
 
     # comment this out if want to test something without movement
